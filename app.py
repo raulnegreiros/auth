@@ -68,8 +68,15 @@ def authenticate():
     if user['hash'] == crypt(authData['passwd'], user['salt'], 1000).split('$').pop():
         claims = {
             'iss': user['key'],
-            'service': user['service']
+            'service': user['service'],
+            'username': user['username']
         }
+
+        if 'name' in user.keys():
+            claims['name'] = user['name']
+        if 'email' in user.keys():
+            claims['email'] = user['email']
+
         encoded = jwt.encode(claims, user['secret'], algorithm='HS256')
         return make_response(json.dumps({'jwt': encoded}), 200)
 
