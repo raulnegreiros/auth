@@ -147,6 +147,38 @@ def createUser():
     collection.insert_one(authData.copy())
     return formatResponse(200)
 
+# should have restricted access
+@app.route('/user/<userid>', methods=['PUT'])
+def updateUser(userid):
+    if request.mimetype != 'application/json':
+        return formatResponse(400, 'invalid mimetype')
+
+    query = {'id': userid}
+    old_user = collection.find_one(query, {"_id" : False})
+    if old_user is None:
+        return formatResponse(404, 'Unknown user id')
+
+    authData = json.loads(request.data)
+    if 'username' not in authData.keys():
+        return formatResponse(400, 'missing username')
+    if 'passwd' not in authData.keys():
+        return formatResponse(400, 'missing passswd')
+    if 'service' not in authData.keys():
+        return formatResponse(400, 'missing service')
+    if 'id' not in authData.keys():
+        authData['id'] = userid
+
+    authData['salt'] = os.urandom(8).encode('hex')
+    authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
+
+    kongData = configureKong(authData['username'])
+    if kongData is None:
+        return formatResponse(500, 'failed to configure verification subsystem')
+    authData['secret'] = kongData['secret']
+    authData['key'] = kongData['key']
+    del authData['passwd']
+    collection.replace_one(query, authData.copy())
+    return formatResponse(200)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)
