@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 
 from flask import Flask
 from flask import request
@@ -125,6 +126,7 @@ def createUser():
         return formatResponse(400, 'invalid mimetype')
 
     authData = json.loads(request.data)
+    authData['id'] = str(uuid.uuid4())
     if 'username' not in authData.keys():
         return formatResponse(400, 'missing username')
     if 'passwd' not in authData.keys():
@@ -145,7 +147,12 @@ def createUser():
     authData['key'] = kongData['key']
     del authData['passwd']
     collection.insert_one(authData.copy())
-    return formatResponse(200)
+    result = {
+        "username": authData['username'],
+        "service": authData['service'],
+        "id": authData['id']
+    }
+    return make_response(json.dumps({"user": result, "message": "user created"}), 200)
 
 # should have restricted access
 @app.route('/user/<userid>', methods=['PUT'])
