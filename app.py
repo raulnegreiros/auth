@@ -18,6 +18,7 @@ from requests import ConnectionError
 
 app = Flask(__name__)
 CORS(app)
+app.url_map.strict_slashes = False
 
 class CollectionManager:
     def __init__(self, database, server='mongodb', port=27017):
@@ -108,13 +109,30 @@ def configureKong(user):
         print("Failed to connect to kong")
         return None
 
+def removeFromKong(user):
+    try:
+        response = requests.delete("%s/consumers/%s" % (kong, user))
+    except ConnectionError:
+        print "Failed to connect to kong"
+        raise
+
 # should have restricted access
 @app.route('/user', methods=['GET'])
 def listUsers():
+    query={}
+    if len(request.args) > 0:
+        if 'username' in request.args:
+            query['username'] = request.args['username']
+        if 'id' in request.args:
+            query['id'] = request.args['id']
+
     userList = []
     fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
-    for d in collection.find({}, fieldFilter):
+    for d in collection.find(query, fieldFilter):
         userList.append(d)
+
+    if (len(userList) == 0) and (len(query) > 0):
+        return formatResponse(404, "No users matching the criteria were found")
 
     return make_response(json.dumps({ "users" : userList}), 200)
 
@@ -186,6 +204,21 @@ def updateUser(userid):
     del authData['passwd']
     collection.replace_one(query, authData.copy())
     return formatResponse(200)
+
+@app.route('/user/<userid>', methods=['DELETE'])
+def removeUser(userid):
+    query = {'id': userid}
+    old_user = collection.find_one(query, {'id': False})
+    if old_user is None:
+        return formatResponse(404, 'Unknown user id')
+
+    try:
+        removeFromKong(old_user['username'])
+    except:
+        return formatResponse(500, "Failed to configure verification subsystem")
+
+    collection.delete_one(query)
+    return formatResponse(200, "User removed")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)
