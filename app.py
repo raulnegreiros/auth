@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import re
 
 from flask import Flask
 from flask import request
@@ -116,6 +117,35 @@ def removeFromKong(user):
         print "Failed to connect to kong"
         raise
 
+class ParseError(Exception):
+    """ Thrown indicating that an invalid user representation has been given """
+
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
+def checkUser(user):
+    if 'username' not in user.keys() or len(user['username']) == 0:
+        raise ParseError('Missing username')
+    if re.match(r'^[a-z0-9_]+$', user['username']) is None:
+        raise ParseError('Invalid username, only lowercase alhpanumeric and underscores allowed')
+
+    if 'passwd' not in user.keys() or len(user['passwd']) == 0:
+        raise ParseError('Missing passswd')
+
+    if 'service' not in user.keys() or len(user['service']) == 0:
+        raise ParseError('Missing service')
+    if re.match(r'^[a-z0-9_]+$', user['username']) is None:
+        raise ParseError('Invalid username, only alhpanumeric and underscores allowed')
+
+    if 'email' not in user.keys() or len(user['email']) == 0:
+        raise ParseError('Missing email')
+    if re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', user['email']) is None:
+        raise ParseError('Invalid email address')
+
+    return user
+
 # should have restricted access
 @app.route('/user', methods=['GET'])
 def listUsers():
@@ -136,7 +166,6 @@ def listUsers():
 
     return make_response(json.dumps({ "users" : userList}), 200)
 
-
 # should have restricted access
 @app.route('/user', methods=['POST'])
 def createUser():
@@ -145,12 +174,10 @@ def createUser():
 
     authData = json.loads(request.data)
     authData['id'] = str(uuid.uuid4())
-    if 'username' not in authData.keys():
-        return formatResponse(400, 'missing username')
-    if 'passwd' not in authData.keys():
-        return formatResponse(400, 'missing passswd')
-    if 'service' not in authData.keys():
-        return formatResponse(400, 'missing service')
+    try:
+        checkUser(authData)
+    except ParseError as e:
+        return formatResponse(400, str(e))
 
     if collection.find_one({'username' : authData['username']}, {"_id" : False}):
         return formatResponse(400, 'user already exists')
@@ -184,14 +211,12 @@ def updateUser(userid):
         return formatResponse(404, 'Unknown user id')
 
     authData = json.loads(request.data)
-    if 'username' not in authData.keys():
-        return formatResponse(400, 'missing username')
-    if 'passwd' not in authData.keys():
-        return formatResponse(400, 'missing passswd')
-    if 'service' not in authData.keys():
-        return formatResponse(400, 'missing service')
     if 'id' not in authData.keys():
         authData['id'] = userid
+    try:
+        checkUser(authData)
+    except ParseError as e:
+        return formatResponse(400, str(e))
 
     authData['salt'] = os.urandom(8).encode('hex')
     authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
