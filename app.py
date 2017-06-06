@@ -144,6 +144,9 @@ def checkUser(user):
     if re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', user['email']) is None:
         raise ParseError('Invalid email address')
 
+    if 'name' not in user.keys() or len(user['name']) == 0:
+        raise ParseError("Missing user's name (full name)")
+
     return user
 
 # should have restricted access
