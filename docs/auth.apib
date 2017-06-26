@@ -1,0 +1,162 @@
+FORMAT: 1A
+
+# User Management API
+
+Endpoints to perform user and session management
+
+# Group Auth
+## Session management [/]
+### Create session [POST]
+Authenticate with the system, returning a session token to be used with API
+
++ Request (application/json)
+  + Body
+    {
+      "username" : "admin",
+      "passwd" : "admin"
+    }
+
++ Response 400 (application/json)
+  {
+    "status": 400,
+    "message": "invalid mimetype"
+  }
++ Response 400 (application/json)
+  {
+    "status": 400,
+    "message": "missing passswd"
+  }
++ Response 400 (application/json)
+  {
+    "status": 400,
+    "message": "missing username"
+  }
++ Response 400 (application/json)
+  {
+    "message": "not authorized",
+    "status": 401
+  }
++ Response 200 (application/json)
+  {
+    "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhOTE5ZWRkNzU1MWM0YTg4YWJiOGFhZGQ0ZjM5NTYyYiIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4gKHN1cGVydXNlcikiLCJzZXJ2aWNlIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQG5vZW1haWwuY29tIn0.j1iYHoBGXP8Sb0FsHiz2rqy6XArsF_dFHyae88PvodY"
+  }
+
+## Known users manipulation [/user]
+### List known users [GET]
+Lists all users known to the platform
++ Request
+  + Headers
+    Authorization: Bearer JWT
++ Response 200 (application/json)
+  {
+    "users": [
+        {
+            "email": "admin@noemail.com",
+            "id": "a43ecdfb-a91f-4452-b32f-c86232b5cfc9",
+            "name": "Admin (superuser)",
+            "service": "admin",
+            "username": "admin"
+        }
+    ]
+  }
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
+
+
+### Register a new user [POST]
+Creates a new user, assigning it a service.
+
+Service is the token that associates the user with the set of devices and flows it has access to.
+
++ Request (application/json)
+  + Headers
+    Authorization: Bearer JWT
+  + Body
+    {
+      "username": "admin",
+      "passwd": "admin",
+      "service": "admin",
+      "email": "admin@noemail.com",
+      "name": "Admin (superuser)"
+    }
+
++ Response 200 (application/json)
+  {
+    "message": "user created",
+    "user": {
+      "username": "admin",
+      "id": "d44f90c4-3d3c-4cc4-b578-b4d23eeba321",
+      "service": "admin"
+    }
+  }
+
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
+
+
+## Individual user settings [/user/{id}]
+Access a user's authorization and identification information
+
++ parameters
+  + id: (required, string) - The user ID
+### Get user info [GET]
+Retrieves all information from a specific registered user
++ Request
+  + Headers
+    Authorization: Bearer JWT
++ Response 200 (application/json)
+  {
+      "user": {
+          "email": "admin@noemail.com",
+          "id": "85144e99-5a45-40e5-a3c3-7c96d8c14bb2",
+          "name": "Admin (superuser)",
+          "service": "1234",
+          "username": "qwer"
+      }
+  }
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
++ Response 404 (application/json)
+  {
+    "message": "Unknown user id",
+    "status": 404
+  }
+
+### Update user info [PUT]
+Replaces user information. Fields or attributes that are not informed will revert to their defaults.
++ Request (application/json)
+  + Headers
+    Authorization: Bearer JWT
+  + Body
+    {
+      "username": "admin",
+      "passwd": "admin",
+      "service": "admin",
+      "email": "admin@noemail.com",
+      "name": "Admin (superuser)"
+    }
++ Response 200 (application/json)
+  {
+    "message": "ok",
+    "status": 200
+  }
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
++ Response 404 (application/json)
+  {
+    "message": "Unknown user id",
+    "status": 404
+  }
+
+### Remove user [DELETE]
+Removes a user from the system
++ Request
+  + Headers
+    Authorization: Bearer JWT
++ Response 200 (application/json)
+  {
+    "message": "User removed",
+    "status": 200
+  }
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
