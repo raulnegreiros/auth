@@ -5,8 +5,8 @@ import re
 
 from flask import Flask
 from flask import request
-from flask import make_response
-from flask_cors import CORS, cross_origin
+from flask import make_response as fmake_response
+# from flask_cors import CORS, cross_origin
 
 import pymongo
 from pymongo import MongoClient
@@ -18,8 +18,13 @@ import requests
 from requests import ConnectionError
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 app.url_map.strict_slashes = False
+
+def make_response(payload, status):
+    resp = fmake_response(payload, status)
+    resp.headers['content-type'] = 'application/json'
+    return resp
 
 class CollectionManager:
     def __init__(self, database, server='mongodb', port=27017):
@@ -201,6 +206,17 @@ def createUser():
         "id": authData['id']
     }
     return make_response(json.dumps({"user": result, "message": "user created"}), 200)
+
+    # should have restricted access
+@app.route('/user/<userid>', methods=['GET'])
+def getUser(userid):
+    query = {'id': userid}
+    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
+    old_user = collection.find_one(query, fieldFilter)
+    if old_user is None:
+        return formatResponse(404, 'Unknown user id')
+
+    return make_response(json.dumps({"user": old_user}), 200)
 
 # should have restricted access
 @app.route('/user/<userid>', methods=['PUT'])
