@@ -2,6 +2,8 @@ import json
 import os
 import uuid
 import re
+import time
+import binascii
 
 from flask import Flask
 from flask import request
@@ -71,11 +73,17 @@ def authenticate():
 
     user = collection.find_one({'username' : authData['username']}, {"_id" : False})
     if user is None:
-        return formatResponse(401, 'invalid user')
+        return formatResponse(401, 'not authorized') #should not give hints about authentication problems 
 
     if user['hash'] == crypt(authData['passwd'], user['salt'], 1000).split('$').pop():
         claims = {
             'iss': user['key'],
+            'iat': int(time.time()),
+            #TODO: ativate exp time (this feature causes UX problems in the current version)
+            #'exp': int(time.time() + tokenExpirationMinutes*60),
+
+            #generate a random string as nonce
+            'jti' : binascii.b2a_hex(os.urandom(16)),
             'service': user['service'],
             'username': user['username']
         }
@@ -84,6 +92,11 @@ def authenticate():
             claims['name'] = user['name']
         if 'email' in user.keys():
             claims['email'] = user['email']
+
+        if 'profile' in user.keys():
+            claims['profile'] = user['profile']
+        else:
+            claims['profile'] = 'user'
 
         encoded = jwt.encode(claims, user['secret'], algorithm='HS256')
         return make_response(json.dumps({'jwt': encoded}), 200)
