@@ -71,7 +71,7 @@ def authenticate():
     if 'passwd' not in authData.keys():
         return formatResponse(400, 'missing passswd')
 
-    user = collection.find_one({'username' : authData['username']}, {"_id" : False})
+    user = collection.find_one({'username' : authData['username'].lower()}, {"_id" : False})
     if user is None:
         return formatResponse(401, 'not authorized') #should not give hints about authentication problems 
 
