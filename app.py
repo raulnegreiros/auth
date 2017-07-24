@@ -267,6 +267,9 @@ def updateUser(userid):
     except ParseError as e:
         return formatResponse(400, str(e))
 
+    if old_user['username'] != authData['username']:
+        return formatResponse(400, "usernames can't be updated")
+
     #verify if the email is in use by another user
     anotherUser = collection.find_one({'email' : authData['email']}, {"_id" : False})
     if anotherUser is not None:
