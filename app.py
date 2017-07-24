@@ -65,7 +65,11 @@ def authenticate():
     if request.mimetype != 'application/json':
         return formatResponse(400, 'invalid mimetype')
 
-    authData = json.loads(request.data)
+    try:
+        authData = json.loads(request.data)
+    except ValueError:
+        return formatResponse(400, 'malformed JSON')
+
     if 'username' not in authData.keys():
         return formatResponse(400, 'missing username')
     if 'passwd' not in authData.keys():
@@ -73,7 +77,7 @@ def authenticate():
 
     user = collection.find_one({'username' : authData['username'].lower()}, {"_id" : False})
     if user is None:
-        return formatResponse(401, 'not authorized') #should not give hints about authentication problems 
+        return formatResponse(401, 'not authorized') #should not give hints about authentication problems
 
     if user['hash'] == crypt(authData['passwd'], user['salt'], 1000).split('$').pop():
         claims = {
@@ -193,7 +197,10 @@ def createUser():
     if request.mimetype != 'application/json':
         return formatResponse(400, 'invalid mimetype')
 
-    authData = json.loads(request.data)
+    try:
+        authData = json.loads(request.data)
+    except ValueError:
+        return formatResponse(400, 'malformed JSON')
     authData['id'] = str(uuid.uuid4())
     try:
         checkUser(authData)
@@ -242,7 +249,10 @@ def updateUser(userid):
     if old_user is None:
         return formatResponse(404, 'Unknown user id')
 
-    authData = json.loads(request.data)
+    try:
+        authData = json.loads(request.data)
+    except ValueError:
+        return formatResponse(400, 'malformed JSON')
     if 'id' not in authData.keys():
         authData['id'] = userid
     try:
