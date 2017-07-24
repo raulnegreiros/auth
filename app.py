@@ -49,6 +49,10 @@ class CollectionManager:
 
 collection = CollectionManager('auth').getCollection('users')
 
+#create index to optimize queries and enforce fields uniqueness
+collection.create_index([('username', pymongo.ASCENDING)], name='username_index', unique=True)
+collection.create_index([('email', pymongo.ASCENDING)], name='email_index', unique=True)
+
 def formatResponse(status, message=None):
     payload = None
     if message:
@@ -73,7 +77,7 @@ def authenticate():
     if 'username' not in authData.keys():
         return formatResponse(400, 'missing username')
     if 'passwd' not in authData.keys():
-        return formatResponse(400, 'missing passswd')
+        return formatResponse(400, 'missing passwd')
 
     user = collection.find_one({'username' : authData['username'].lower()}, {"_id" : False})
     if user is None:
@@ -154,7 +158,7 @@ def checkUser(user):
         raise ParseError('Invalid username, only lowercase alhpanumeric and underscores allowed')
 
     if 'passwd' not in user.keys() or len(user['passwd']) == 0:
-        raise ParseError('Missing passswd')
+        raise ParseError('Missing passwd')
 
     if 'service' not in user.keys() or len(user['service']) == 0:
         raise ParseError('Missing service')
@@ -210,6 +214,9 @@ def createUser():
     if collection.find_one({'username' : authData['username']}, {"_id" : False}):
         return formatResponse(400, 'user already exists')
 
+    if collection.find_one({'email' : authData['email']}, {"_id" : False}):
+        return formatResponse(400, 'email already in use')
+
     authData['salt'] = os.urandom(8).encode('hex')
     authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
 
@@ -259,6 +266,12 @@ def updateUser(userid):
         checkUser(authData)
     except ParseError as e:
         return formatResponse(400, str(e))
+
+    #verify if the email is in use by another user
+    anotherUser = collection.find_one({'email' : authData['email']}, {"_id" : False})
+    if anotherUser is not None:
+        if anotherUser['id'] != old_user['id']:
+            return formatResponse(400, 'email already in use')
 
     authData['salt'] = os.urandom(8).encode('hex')
     authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
