@@ -234,7 +234,7 @@ def createUser():
     }
     return make_response(json.dumps({"user": result, "message": "user created"}), 200)
 
-    # should have restricted access
+# should have restricted access
 @app.route('/user/<userid>', methods=['GET'])
 def getUser(userid):
     query = {'id': userid}
@@ -260,8 +260,12 @@ def updateUser(userid):
         authData = json.loads(request.data)
     except ValueError:
         return formatResponse(400, 'malformed JSON')
+
     if 'id' not in authData.keys():
         authData['id'] = userid
+    elif authData['id'] != userid:
+        return formatResponse(400, "user ID can't be updated")
+
     try:
         checkUser(authData)
     except ParseError as e:
