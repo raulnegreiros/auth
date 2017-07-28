@@ -307,5 +307,37 @@ def removeUser(userid):
     collection.delete_one(query)
     return formatResponse(200, "User removed")
 
+
+# should have restricted access
+@app.route('/user/search', methods=['GET'])
+def searchUser():
+    term = None
+    if len(request.args) > 0:
+        if 'q' in request.args:
+            term = request.args['q']
+    
+    if not term:
+        return formatResponse(400, 'No query given')
+
+    #TODO: define a minimum and maximun search term len
+    if (len(term) < 2):
+        return formatResponse(400, 'The search term must have at least 3 characters')
+
+    if re.match(r'^[a-zA-Z0-9_@.]+$', term) is None:
+        return formatResponse(400, 'Invalid search term. only alhpanumeric, AT, dots and underscores allowed')
+    
+    term = term.lower()
+    userList = []
+
+    query = {"$or":[ {"name": {"$regex": re.compile(term, re.IGNORECASE)}} , {"username": {"$regex": term} }, {"email": {"$regex": term} }]}
+    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
+    for d in collection.find(query, fieldFilter):
+        userList.append(d)
+
+    if (len(userList) == 0):
+        return formatResponse(404, "No users matching the criteria were found")
+
+    return make_response(json.dumps({ "users" : userList}), 200)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)

@@ -160,3 +160,32 @@ Removes a user from the system
   }
 + Response 401 (application/json)
   {"message":"Unauthorized"}
+
+## Find users [/user/search/]
+Find user with name, username or e-mail matching a search term
+
+### Find users [GET]
+Retrieves all information from users matching the term passed by URL parameter 'q'.
++ Request
+  + Headers
+    Authorization: Bearer JWT
++ Response 200 (application/json)
+  {
+    "users": [
+        {
+            "username": "alexv",
+            "profile": "user",
+            "name": "Alexandre",
+            "service": "user",
+            "id": "921d4997-8e85-49f6-ac42-2aba6f31bdb2",
+            "email": "alexv@noemail.com"
+        }
+    ]
+  }
++ Response 401 (application/json)
+  {"message":"Unauthorized"}
++ Response 404 (application/json)
+  {
+    "message": "No users matching the criteria were found",
+    "status": 404
+  }
