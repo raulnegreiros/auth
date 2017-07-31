@@ -17,7 +17,8 @@ from pbkdf2 import crypt
 import jwt
 
 import requests
-from requests import ConnectionError
+
+from kongUtils import configureKong, revokeKongSecret, removeFromKong
 
 app = Flask(__name__)
 # CORS(app)
@@ -48,6 +49,7 @@ class CollectionManager:
         return self.getCollection(collection)
 
 collection = CollectionManager('auth').getCollection('users')
+#confCollection = CollectionManager('auth').getCollection('conf') #coming soon..
 
 #create index to optimize queries and enforce fields uniqueness
 collection.create_index([('username', pymongo.ASCENDING)], name='username_index', unique=True)
@@ -111,47 +113,7 @@ def authenticate():
 
     return formatResponse(401, 'not authorized')
 
-kong = 'http://kong:8001'
-def configureKong(user):
-    try:
-        exists = False
-        response = requests.post('%s/consumers' % kong, data={'username': user})
-        if response.status_code == 409:
-            exists = True
-        elif not (response.status_code >= 200 and response.status_code < 300):
-            print ("failed to set consumer: %d %s" % (response.status_code, response.reason))
-            print (response.json())
-            return None
 
-        headers = {"content-type":"application/x-www-form-urlencoded"}
-        response = requests.post('%s/consumers/%s/jwt' % (kong, user), headers=headers)
-        if not (response.status_code >= 200 and response.status_code < 300):
-            print ("failed to create key: %d %s" % (response.status_code, response.reason))
-            print (response.json())
-            return None
-
-        reply = response.json()
-        return { 'key': reply['key'], 'secret': reply['secret'], 'kongid': reply['id'] }
-    except ConnectionError:
-        print("Failed to connect to kong")
-        return None
-
-#invalidate old kong shared secret
-def revokeKongSecret(username, tokenId):
-    try:
-        print "revoking " + tokenId + " from " + username
-        requests.delete("%s/consumers/%s/jwt/%s" % (kong, username, tokenId))
-    except ConnectionError:
-        print "Failed to connect to kong"
-        raise
-
-
-def removeFromKong(user):
-    try:
-        response = requests.delete("%s/consumers/%s" % (kong, user))
-    except ConnectionError:
-        print "Failed to connect to kong"
-        raise
 
 class ParseError(Exception):
     """ Thrown indicating that an invalid user representation has been given """
