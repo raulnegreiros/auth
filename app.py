@@ -131,10 +131,20 @@ def configureKong(user):
             return None
 
         reply = response.json()
-        return { 'key': reply['key'], 'secret': reply['secret'] }
+        return { 'key': reply['key'], 'secret': reply['secret'], 'kongid': reply['id'] }
     except ConnectionError:
         print("Failed to connect to kong")
         return None
+
+#invalidate old kong shared secret
+def revokeKongSecret(username, tokenId):
+    try:
+        print "revoking " + tokenId + " from " + username
+        requests.delete("%s/consumers/%s/jwt/%s" % (kong, username, tokenId))
+    except ConnectionError:
+        print "Failed to connect to kong"
+        raise
+
 
 def removeFromKong(user):
     try:
@@ -225,6 +235,7 @@ def createUser():
         return formatResponse(500, 'failed to configure verification subsystem')
     authData['secret'] = kongData['secret']
     authData['key'] = kongData['key']
+    authData['kongid'] = kongData['kongid']
     del authData['passwd']
     collection.insert_one(authData.copy())
     result = {
@@ -286,8 +297,12 @@ def updateUser(userid):
     kongData = configureKong(authData['username'])
     if kongData is None:
         return formatResponse(500, 'failed to configure verification subsystem')
+
+    if 'kongid' in old_user.keys():
+        revokeKongSecret(old_user['username'], old_user['kongid'])
     authData['secret'] = kongData['secret']
     authData['key'] = kongData['key']
+    authData['kongid'] = kongData['kongid']
     del authData['passwd']
     collection.replace_one(query, authData.copy())
     return formatResponse(200)
