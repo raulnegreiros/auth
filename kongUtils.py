@@ -3,7 +3,6 @@ from requests import ConnectionError
 
 global kong
 
-kong = 'http://kong:8001'
 def configureKong(user):
     try:
         exists = False

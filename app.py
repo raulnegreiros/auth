@@ -11,14 +11,15 @@ from flask import make_response as fmake_response
 # from flask_cors import CORS, cross_origin
 
 import pymongo
-from pymongo import MongoClient
 
 from pbkdf2 import crypt
 import jwt
 
 import requests
 
-from kongUtils import configureKong, revokeKongSecret, removeFromKong
+from conf import loadconf, getConfValue
+import kongUtils
+from CollectionManager import CollectionManager
 
 app = Flask(__name__)
 # CORS(app)
@@ -29,27 +30,7 @@ def make_response(payload, status):
     resp.headers['content-type'] = 'application/json'
     return resp
 
-class CollectionManager:
-    def __init__(self, database, server='mongodb', port=27017):
-        self.client = None
-        self.collection = None
-        self.database = database
-        self.server = server
-        self.port = port
-
-    def getDB(self):
-        if not self.client:
-            self.client = MongoClient(self.server, self.port)
-        return self.client[self.database]
-
-    def getCollection(self, collection):
-        return self.getDB()[collection]
-
-    def __call__(self, collection):
-        return self.getCollection(collection)
-
 collection = CollectionManager('auth').getCollection('users')
-#confCollection = CollectionManager('auth').getCollection('conf') #coming soon..
 
 #create index to optimize queries and enforce fields uniqueness
 collection.create_index([('username', pymongo.ASCENDING)], name='username_index', unique=True)
@@ -84,13 +65,14 @@ def authenticate():
     user = collection.find_one({'username' : authData['username'].lower()}, {"_id" : False})
     if user is None:
         return formatResponse(401, 'not authorized') #should not give hints about authentication problems
-
+    
     if user['hash'] == crypt(authData['passwd'], user['salt'], 1000).split('$').pop():
+        tokenExpiration = getConfValue('tokenExpiration')
+        
         claims = {
             'iss': user['key'],
             'iat': int(time.time()),
-            #TODO: ativate exp time (this feature causes UX problems in the current version)
-            #'exp': int(time.time() + tokenExpirationMinutes*60),
+            'exp': int(time.time() + tokenExpiration),
 
             #generate a random string as nonce
             'jti' : binascii.b2a_hex(os.urandom(16)),
@@ -112,8 +94,6 @@ def authenticate():
         return make_response(json.dumps({'jwt': encoded}), 200)
 
     return formatResponse(401, 'not authorized')
-
-
 
 class ParseError(Exception):
     """ Thrown indicating that an invalid user representation has been given """
@@ -158,7 +138,7 @@ def listUsers():
             query['id'] = request.args['id']
 
     userList = []
-    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
+    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False, 'kongid': False }
     for d in collection.find(query, fieldFilter):
         userList.append(d)
 
@@ -192,7 +172,7 @@ def createUser():
     authData['salt'] = os.urandom(8).encode('hex')
     authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
 
-    kongData = configureKong(authData['username'])
+    kongData = kongUtils.configureKong(authData['username'])
     if kongData is None:
         return formatResponse(500, 'failed to configure verification subsystem')
     authData['secret'] = kongData['secret']
@@ -211,7 +191,7 @@ def createUser():
 @app.route('/user/<userid>', methods=['GET'])
 def getUser(userid):
     query = {'id': userid}
-    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
+    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False, 'kongid': False }
     old_user = collection.find_one(query, fieldFilter)
     if old_user is None:
         return formatResponse(404, 'Unknown user id')
@@ -256,12 +236,12 @@ def updateUser(userid):
     authData['salt'] = os.urandom(8).encode('hex')
     authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
 
-    kongData = configureKong(authData['username'])
+    kongData = kongUtils.configureKong(authData['username'])
     if kongData is None:
         return formatResponse(500, 'failed to configure verification subsystem')
 
     if 'kongid' in old_user.keys():
-        revokeKongSecret(old_user['username'], old_user['kongid'])
+        kongUtils.revokeKongSecret(old_user['username'], old_user['kongid'])
     authData['secret'] = kongData['secret']
     authData['key'] = kongData['key']
     authData['kongid'] = kongData['kongid']
@@ -277,7 +257,7 @@ def removeUser(userid):
         return formatResponse(404, 'Unknown user id')
 
     try:
-        removeFromKong(old_user['username'])
+        kongUtils.removeFromKong(old_user['username'])
     except:
         return formatResponse(500, "Failed to configure verification subsystem")
 
@@ -307,7 +287,7 @@ def searchUser():
     userList = []
 
     query = {"$or":[ {"name": {"$regex": re.compile(term, re.IGNORECASE)}} , {"username": {"$regex": term} }, {"email": {"$regex": term} }]}
-    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False }
+    fieldFilter = {'_id': False, 'salt': False, 'hash': False, 'secret': False, 'key': False, 'kongid': False }
     for d in collection.find(query, fieldFilter):
         userList.append(d)
 
@@ -317,4 +297,6 @@ def searchUser():
     return make_response(json.dumps({ "users" : userList}), 200)
 
 if __name__ == '__main__':
+    loadconf()
+    kongUtils.kong = getConfValue('kongURL')
     app.run(host='0.0.0.0', threaded=True)
