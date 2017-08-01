@@ -296,6 +296,25 @@ def searchUser():
 
     return make_response(json.dumps({ "users" : userList}), 200)
 
+# should have restricted access for outside the aplication
+@app.route('/revoke', methods=['DELETE'])
+def revokeAll():
+    #for all user, create a new secret and delete the old one
+    for user in collection.find():
+        kongData = kongUtils.configureKong(user['username'])
+        if kongData is None:
+            return 'failed to configure verification subsystem'
+        
+        #revoke the old key
+        if 'kongid' in user.keys():
+            kongUtils.revokeKongSecret(user['username'], user['kongid'])
+        
+        user['secret'] = kongData['secret']
+        user['key'] = kongData['key']
+        user['kongid'] = kongData['kongid']
+        collection.replace_one( {'_id': user['_id']} , user.copy())
+    return formatResponse(200)
+
 if __name__ == '__main__':
     loadconf()
     kongUtils.kong = getConfValue('kongURL')
