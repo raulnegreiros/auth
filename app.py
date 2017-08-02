@@ -103,13 +103,13 @@ class ParseError(Exception):
     def __str__(self):
         return self.msg
 
-def checkUser(user):
+def checkUser(user, ignore = []):
     if 'username' not in user.keys() or len(user['username']) == 0:
         raise ParseError('Missing username')
     if re.match(r'^[a-z0-9_]+$', user['username']) is None:
         raise ParseError('Invalid username, only lowercase alhpanumeric and underscores allowed')
 
-    if 'passwd' not in user.keys() or len(user['passwd']) == 0:
+    if ('passwd' not in ignore) and ('passwd' not in user.keys() or len(user['passwd']) == 0):
         raise ParseError('Missing passwd')
 
     if 'service' not in user.keys() or len(user['service']) == 0:
@@ -220,7 +220,10 @@ def updateUser(userid):
         return formatResponse(400, "user ID can't be updated")
 
     try:
-        checkUser(authData)
+        if 'passwd' not in authData.keys():
+            checkUser(authData, ['passwd'])
+        else:
+            checkUser(authData)
     except ParseError as e:
         return formatResponse(400, str(e))
 
@@ -233,8 +236,13 @@ def updateUser(userid):
         if anotherUser['id'] != old_user['id']:
             return formatResponse(400, 'email already in use')
 
-    authData['salt'] = os.urandom(8).encode('hex')
-    authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
+    if 'passwd' in authData.keys():
+        authData['salt'] = os.urandom(8).encode('hex')
+        authData['hash'] = crypt(authData['passwd'], authData['salt'], 1000).split('$').pop()
+        del authData['passwd']
+    else:
+        authData['salt'] = old_user['salt']
+        authData['hash'] = old_user['hash']
 
     kongData = kongUtils.configureKong(authData['username'])
     if kongData is None:
@@ -245,7 +253,6 @@ def updateUser(userid):
     authData['secret'] = kongData['secret']
     authData['key'] = kongData['key']
     authData['kongid'] = kongData['kongid']
-    del authData['passwd']
     collection.replace_one(query, authData.copy())
     return formatResponse(200)
 
