@@ -21,7 +21,7 @@ def getConfValue(confKey):
 
 def loadconf():
     configuration = confCollection.find_one()
-    if configuration == None:
+    if configuration is None:
         print("No configuration found. Using default values")
         confCollection.insert_one(defaultConfiguration.copy())
     else:

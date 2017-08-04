@@ -1,9 +1,9 @@
 import requests
 from requests import ConnectionError
-
-global kong
+from conf import getConfValue
 
 def configureKong(user):
+    kong = getConfValue('kongURL')
     try:
         exists = False
         response = requests.post('%s/consumers' % kong, data={'username': user})
@@ -29,6 +29,7 @@ def configureKong(user):
 
 #invalidate old kong shared secret
 def revokeKongSecret(username, tokenId):
+    kong = getConfValue('kongURL')
     try:
         requests.delete("%s/consumers/%s/jwt/%s" % (kong, username, tokenId))
     except ConnectionError:
@@ -37,6 +38,7 @@ def revokeKongSecret(username, tokenId):
 
 
 def removeFromKong(user):
+    kong = getConfValue('kongURL')
     try:
         requests.delete("%s/consumers/%s" % (kong, user))
     except ConnectionError:

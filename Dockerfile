@@ -20,7 +20,9 @@ RUN mkdir -p /var/log/nginx/app /var/log/uwsgi/app /var/log/supervisor /var/www/
     && chown -R www-data:www-data /var/log
 
 COPY *.py /var/www/app/
+COPY appRun.sh /root/
+RUN chmod +x /root/appRun.sh
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/root/appRun.sh"]
 
 EXPOSE 5000
