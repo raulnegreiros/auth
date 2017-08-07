@@ -19,9 +19,8 @@ RUN mkdir -p /var/log/nginx/app /var/log/uwsgi/app /var/log/supervisor /var/www/
     && chown -R www-data:www-data /var/www/app \
     && chown -R www-data:www-data /var/log
 
-COPY *.py /var/www/app/
 COPY appRun.sh /root/
-RUN chmod +x /root/appRun.sh
+COPY *.py /var/www/app/
 
 CMD ["/root/appRun.sh"]
 

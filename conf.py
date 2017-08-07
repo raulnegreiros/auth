@@ -15,6 +15,10 @@ confCollection = CollectionManager('auth').getCollection('conf')
 
 def getConfValue(confKey):
     configuration = confCollection.find_one()
+    if configuration is None:
+         loadconf()
+         configuration = confCollection.find_one()
+    
     if confKey in configuration.keys():
         return configuration[confKey]
     return None

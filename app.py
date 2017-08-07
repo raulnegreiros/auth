@@ -323,6 +323,4 @@ def revokeAll():
     return formatResponse(200)
 
 if __name__ == '__main__':
-    loadconf()
-    kongUtils.kong = getConfValue('kongURL')
     app.run(host='0.0.0.0', threaded=True)
