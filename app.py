@@ -8,7 +8,6 @@ import binascii
 from flask import Flask
 from flask import request
 from flask import make_response as fmake_response
-# from flask_cors import CORS, cross_origin
 
 import pymongo
 
@@ -22,7 +21,6 @@ import kongUtils
 from CollectionManager import CollectionManager
 
 app = Flask(__name__)
-# CORS(app)
 app.url_map.strict_slashes = False
 
 def make_response(payload, status):
@@ -65,10 +63,10 @@ def authenticate():
     user = collection.find_one({'username' : authData['username'].lower()}, {"_id" : False})
     if user is None:
         return formatResponse(401, 'not authorized') #should not give hints about authentication problems
-    
+
     if user['hash'] == crypt(authData['passwd'], user['salt'], 1000).split('$').pop():
         tokenExpiration = getConfValue('tokenExpiration')
-        
+
         claims = {
             'iss': user['key'],
             'iat': int(time.time()),
@@ -279,7 +277,7 @@ def searchUser():
     if len(request.args) > 0:
         if 'q' in request.args:
             term = request.args['q']
-    
+
     if not term:
         return formatResponse(400, 'No query given')
 
@@ -289,7 +287,7 @@ def searchUser():
 
     if re.match(r'^[a-zA-Z0-9_@.]+$', term) is None:
         return formatResponse(400, 'Invalid search term. only alhpanumeric, AT, dots and underscores allowed')
-    
+
     term = term.lower()
     userList = []
 
@@ -311,11 +309,11 @@ def revokeAll():
         kongData = kongUtils.configureKong(user['username'])
         if kongData is None:
             return 'failed to configure verification subsystem'
-        
+
         #revoke the old key
         if 'kongid' in user.keys():
             kongUtils.revokeKongSecret(user['username'], user['kongid'])
-        
+
         user['secret'] = kongData['secret']
         user['key'] = kongData['key']
         user['kongid'] = kongData['kongid']

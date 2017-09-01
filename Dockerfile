@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
     && apt-get install -y python-pip python-dev uwsgi-plugin-python nginx supervisor \
-    && pip install uwsgi flask flask-cors requests PyJWT pbkdf2 pymongo
+    && pip install uwsgi flask requests PyJWT pbkdf2 pymongo
 
 
 COPY docker/nginx/flask.conf /etc/nginx/sites-available/
