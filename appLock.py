@@ -3,7 +3,7 @@
 # this script check a list of dependencies, like if databases is ready.
 #  When all dependencies are fulfilled, the script ends
 
-from CollectionManager import CollectionManager
+from auth.CollectionManager import CollectionManager
 import sys
 import json
 from time import sleep
@@ -23,7 +23,7 @@ def waitMongo(configuration):
             exit(-1)
         except: #pymongo erros
             collection = None
-        
+
         print 'mongo fail..will try again in ' + str(poolingsec)
         sleep(poolingsec)
     print 'Mongo is ready'
@@ -35,7 +35,7 @@ def verifyDependences():
             global poolingsec
             poolingsec = int(sys.argv[i+1])
             i = i + 1
-        
+
         elif sys.argv[i] == '--mongo':
             configuration = json.loads(sys.argv[i+1])
             waitMongo(configuration)
