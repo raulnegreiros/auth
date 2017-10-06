@@ -1,17 +1,18 @@
 import logging
 import requests
 from requests import ConnectionError
-from conf import getConfValue
+import conf
+from flaskAlchemyInit import HTTPRequestError
 
 LOGGER = logging.getLogger('device-manager.' + __name__)
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.INFO)
 
+
 def configureKong(user):
-    kong = getConfValue('kongURL')
     try:
         exists = False
-        response = requests.post('%s/consumers' % kong, data={'username': user})
+        response = requests.post('%s/consumers' % conf.kongURL, data={'username': user})
         if response.status_code == 409:
             exists = True
         elif not (response.status_code >= 200 and response.status_code < 300):
@@ -20,7 +21,7 @@ def configureKong(user):
             return None
 
         headers = {"content-type":"application/x-www-form-urlencoded"}
-        response = requests.post('%s/consumers/%s/jwt' % (kong, user), headers=headers)
+        response = requests.post('%s/consumers/%s/jwt' % (conf.kongURL, user), headers=headers)
         if not (response.status_code >= 200 and response.status_code < 300):
             LOGGER.error("failed to create key: %d %s" % (response.status_code, response.reason))
             LOGGER.error(response.json())
@@ -34,18 +35,16 @@ def configureKong(user):
 
 #invalidate old kong shared secret
 def revokeKongSecret(username, tokenId):
-    kong = getConfValue('kongURL')
     try:
-        requests.delete("%s/consumers/%s/jwt/%s" % (kong, username, tokenId))
+        requests.delete("%s/consumers/%s/jwt/%s" % (conf.kongURL, username, tokenId))
     except ConnectionError:
         LOGGER.error("Failed to connect to kong")
-        raise
+        raise HTTPRequestError(500, "Failed to connect to kong")
 
 
 def removeFromKong(user):
-    kong = getConfValue('kongURL')
     try:
-        requests.delete("%s/consumers/%s" % (kong, user))
+        requests.delete("%s/consumers/%s" % (conf.kongURL, user))
     except ConnectionError:
         LOGGER.error("Failed to connect to kong")
-        raise
+        raise HTTPRequestError(500, "Failed to connect to kong")

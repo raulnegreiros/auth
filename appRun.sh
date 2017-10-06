@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # wait for database
-/usr/bin/python /var/www/app/appLock.py --sleep 5 \
-                                        --mongo '{"database":"auth","collection":"conf"}' \
-                                         &> /tmp/appLock.log
+python3 /usr/src/app/appLock.py --sleep 10 --max_retries 10
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+
+cd auth
+#create database tables
+echo -e "from webRoutes import db\ndb.create_all()" | python3
 
 # handle service initialization
 if [ $1 = 'start' ]; then
@@ -17,7 +20,7 @@ if [ $1 = 'start' ]; then
             exit 1
         fi
         sleep $sleep_time
-        exec gunicorn auth.app:app \
+        exec gunicorn webRoutes:app \
                   --bind 0.0.0.0:5000 \
                   --reload -R \
                   --access-logfile - \

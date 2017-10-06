@@ -1,12 +1,12 @@
-FROM python:2.7
+FROM python:3
 
-RUN pip install cython
+RUN pip3 install cython
 
 RUN mkdir -p /usr/src/app/requirements
 WORKDIR /usr/src/app
 
 ADD . /usr/src/app
-RUN ["python", "setup.py", "develop"]
+RUN ["python3", "setup.py", "develop"]
 
 EXPOSE 5000
 CMD ["./appRun.sh", "start"]

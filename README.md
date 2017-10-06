@@ -14,8 +14,8 @@ the service's docker image.
 
 ```shell
 # you may need sudo for those
-apt-get install -y python-pip
-pip install uwsgi flask requests PyJWT pbkdf2 pymongo
+apt-get install -y python3-pip
+pip3 install uwsgi flask requests PyJWT pbkdf2 sqlalchemy py-postgresql flask_sqlalchemy
 ```
 
 Another alternative is to use docker to run the service. To build the container, from the
@@ -24,6 +24,16 @@ repository's  root:
 ```shell
 # you may need sudo on your machine: https://docs.docker.com/engine/installation/linux/linux-postinstall/
 docker build -t <tag> -f docker/Dockerfile .
+```
+
+## configuration
+If you are running without docker, You will need to create the database tables
+before the first run.
+
+python shell:
+```shell
+>>> from webRouter import db
+>>> db.create_all()
 ```
 
 ## API

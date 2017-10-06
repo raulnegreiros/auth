@@ -1,51 +1,52 @@
-#!/usr/bin/python
-#  this is a utility script
-# this script check a list of dependencies, like if databases is ready.
-#  When all dependencies are fulfilled, the script ends
-
-from auth.CollectionManager import CollectionManager
+#!/usr/bin/python3
+import postgresql
 import sys
-import json
 from time import sleep
 
-poolingsec = 5
+import auth.conf as dbconf
 
-def waitMongo(configuration):
-    print 'Waiting for mongo...'
+poolingsec = 5
+max_retries = 10
+retries = 0
+
+def incRetries():
+    global retries
+    retries =  retries + 1
+    if retries >= max_retries:
+        print("max_retries reached. Given up...")
+        exit(-1)
+
+def waitPostgres():
+    print('Waiting for postgres...')
+    retries = 0
     while (True):
         try:
-            collection = CollectionManager(configuration['database']).getCollection(configuration['collection'])
-            if collection is not None:
-                x = collection.find_one()
+            db = postgresql.open('pq://' + dbconf.dbUser + ':' + dbconf.dbPdw + '@' + dbconf.dbHost)
+            if db is not None:
                 break
-        except KeyError as e:
-            print 'Malformed configuration at dependence->mongo->' + str(e.message) + ' aborting.'
-            exit(-1)
-        except: #pymongo erros
-            collection = None
+        except postgresql.exceptions.ClientCannotConnectError as e:
+            print("Failed to connect to database. Error:" + str(e))
 
-        print 'mongo fail..will try again in ' + str(poolingsec)
+        incRetries()
+        print('Will try again in ' + str(poolingsec))
         sleep(poolingsec)
-    print 'Mongo is ready'
+    print('Postgres is ready')
 
-def verifyDependences():
+def verifyParams():
     i = 1
     while i < len(sys.argv):
         if sys.argv[i] == '--sleep':
             global poolingsec
             poolingsec = int(sys.argv[i+1])
             i = i + 1
-
-        elif sys.argv[i] == '--mongo':
-            configuration = json.loads(sys.argv[i+1])
-            waitMongo(configuration)
+        if sys.argv[i] == '--max_retries':
+            global max_retries
+            max_retries = int(sys.argv[i+1])
             i = i + 1
 
-        #we could add more dependences types here
-        #elif sys.argv[i] == ?
         i = i + 1
 
 if __name__ == '__main__':
-    verifyDependences()
-    print 'all dependences fulfilled. Exiting'
+    verifyParams()
+    waitPostgres()
     exit(0)
