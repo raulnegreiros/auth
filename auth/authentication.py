@@ -1,5 +1,5 @@
-# this file contains function for check user credentials
-# and generate a JWT token to represent a user session
+# this file contains function to check user credentials
+# and generate a JWT token
 import time
 import binascii
 import jwt

@@ -135,6 +135,7 @@ def checkPerm(perm):
 
 #creae a permission
 def createPerm(dbSession, permission):
+    permission = {k: permission[k] for k in permission if k in Permission.fillable}
     checkPerm(permission)
     perm = Permission(**permission)
     return perm
@@ -155,14 +156,15 @@ def searchPerm(dbSession, path=None, method=None, permission=None):
         raise HTTPRequestError(404,"No results found with these filters")
     return perms
 
-def getPerm(dbSession, permissionId):
+def getPerm(dbSession, permissionId: int):
     try:
         perm = dbSession.query(Permission).filter_by(id=permissionId).one()
         return perm
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404,"No permission found with this ID")
 
-def updatePerm(dbSession, permissionId, permData):
+def updatePerm(dbSession, permissionId: int, permData):
+    permData = {k: permData[k] for k in permData if k in Permission.fillable}
     checkPerm(permData)
     updated = dbSession.query(Permission).filter_by(id=permissionId) \
             .update(permData)
@@ -184,14 +186,15 @@ def checkGroup(group):
 
     #TODO: must chekc the description?
 
-def createGroup(dbSession, group):
-    checkGroup(group)
+def createGroup(dbSession, groupData):
+    groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
+    checkGroup(groupData)
     try:
-        anotherGroup =  dbSession.query(Group.id).filter_by(name=group['name']).one()
-        raise HTTPRequestError(400,"Group name '" + group['name'] + "' is in use.")
+        anotherGroup =  dbSession.query(Group.id).filter_by(name=groupData['name']).one()
+        raise HTTPRequestError(400,"Group name '" + groupData['name'] + "' is in use.")
     except sqlalchemy.orm.exc.NoResultFound:
         pass
-    g = Group(**group)
+    g = Group(**groupData)
     return g
 
 def searchGroup(dbSession, name=None):
@@ -205,21 +208,22 @@ def searchGroup(dbSession, name=None):
 
     return groups
 
-def getGroup(dbSession, groupId):
+def getGroup(dbSession, groupId: int):
     try:
         group = dbSession.query(Group).filter_by(id=groupId).one()
         return group
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404,"No group found with this ID")
 
-def updateGroup(dbSession, groupId, groupData):
-    checkUser(groupData)
+def updateGroup(dbSession, groupId : int, groupData):
+    groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
+    checkGroup(groupData)
     updated = dbSession.query(Group).filter_by(id=groupId) \
             .update(groupData)
     if (updated == 0):
         raise HTTPRequestError(404,"No group found with this ID")
 
-def deleteGroup(dbSession, groupId):
+def deleteGroup(dbSession, groupId : int):
     try:
         group = dbSession.query(Group).filter_by(id=groupId).one()
         dbSession.delete(group)

@@ -33,8 +33,7 @@ def authenticate():
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
-
-
+# User CRUD
 @app.route('/user', methods=['POST'])
 def createUser():
     try:
@@ -111,6 +110,112 @@ def removeUser(userid):
         crud.deleteUser(db.session, int(userid))
         db.session.commit()
         return formatResponse(200, "User removed")
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+# Permission CRUD
+@app.route('/pap/permission', methods=['POST'])
+def createPermission():
+    try:
+        permData = loadJsonFromRequest(request)
+        newPerm = crud.createPerm(db.session, permData)
+        db.session.add(newPerm)
+        db.session.commit()
+        return make_response(json.dumps({"status": 200, "id": newPerm.id}), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/permission', methods=['GET'])
+def listPermissions():
+    try:
+        permissions = crud.searchPerm(db.session, \
+            #filters
+            request.args['path'] if 'path' in request.args else None,
+            request.args['method'] if 'method' in request.args else None,
+            request.args['permission'] if 'permission' in request.args else None
+        )
+        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({ "permissions" : permissionsSafe}), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/permission/<permid>', methods=['GET'])
+def getPermission(permid):
+    try:
+        perm = crud.getPerm(db.session, int(permid))
+        return make_response(json.dumps(perm.safeDict()), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/permission/<permid>', methods=['PUT'])
+def updatePermission(permid):
+    try:
+        permData = loadJsonFromRequest(request)
+        crud.updatePerm(db.session, int(permid), permData)
+        db.session.commit()
+        return formatResponse(200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/permission/<permid>', methods=['DELETE'])
+def deletePermission(permid):
+    try:
+        crud.getPerm(db.session, int(permid))
+        crud.deletePerm(db.session, int(permid))
+        db.session.commit()
+        return formatResponse(200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+# Group CRUD
+@app.route('/pap/group', methods=['POST'])
+def createGroup():
+    try:
+        groupData = loadJsonFromRequest(request)
+        newGroup = crud.createGroup(db.session, groupData)
+        db.session.add(newGroup)
+        db.session.commit()
+        return make_response(json.dumps({"status": 200, "id": newGroup.id}), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/group', methods=['GET'])
+def listGroup():
+    try:
+        groups = crud.searchGroup(db.session, \
+            #filters
+            request.args['name'] if 'name' in request.args else None
+        )
+        groupsSafe = list(map(lambda p: p.safeDict(), groups))
+        return make_response(json.dumps({ "groups" : groupsSafe}), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/group/<groupId>', methods=['GET'])
+def getGroup(groupId):
+    try:
+        group = crud.getGroup(db.session, int(groupId))
+        return make_response(json.dumps(group.safeDict()), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/group/<groupId>', methods=['PUT'])
+def updateGroup(groupId):
+    try:
+        groupData = loadJsonFromRequest(request)
+        crud.updateGroup(db.session, int(groupId), groupData)
+        db.session.commit()
+        return formatResponse(200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+
+@app.route('/pap/group/<groupId>', methods=['DELETE'])
+def deleteGroup(groupId):
+    try:
+        crud.getGroup(db.session, int(groupId))
+        crud.deleteGroup(db.session, int(groupId))
+        db.session.commit()
+        return formatResponse(200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 

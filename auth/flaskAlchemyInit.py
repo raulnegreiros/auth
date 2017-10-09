@@ -2,8 +2,8 @@
  This file purpose is to configure Flask with Alchemy
  Also, some generic HTTP formatter functions are provided
  There is also a generic exception class for HTTP errors
- This code should be keep independent of the other modules
- so it could be reused in any Flask + Alchemy project
+ This code should be kept independent of the other modules
+ so it can be reused in any Flask + Alchemy project
 '''
 
 from flask import Flask
