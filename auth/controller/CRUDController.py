@@ -9,6 +9,7 @@ from pbkdf2 import crypt
 from database.Models import Permission, User, Group, PermissionEnum
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
+import database.Cache as cache
 
 
 # Helper function to check user fields
@@ -152,6 +153,7 @@ def deleteUser(dbSession, userId: int):
         dbSession.execute(
             UserGroup.__table__.delete(UserGroup.user_id == user.id)
         )
+        cache.deleteKey(userid=user.id)
         dbSession.delete(user)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID")
@@ -247,6 +249,7 @@ def deletePerm(dbSession, permissionId):
             GroupPermission.__table__
             .delete(GroupPermission.permission_id == perm.id)
         )
+        cache.deleteKey(action=perm.method, resource=perm.resource)
         dbSession.delete(perm)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
@@ -317,6 +320,7 @@ def deleteGroup(dbSession, groupId: int):
             UserGroup.__table__
             .delete(UserGroup.group_id == group.id)
         )
+        cache.deleteKey()
         dbSession.delete(group)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")

@@ -37,6 +37,7 @@ def authenticate(dbSession, authData):
             'email': user.email,
             'profile': user.profile,  # Obsolete. Kept for compatibility
             'groups': groupsId,
+            'userid': user.id,
 
             # Generate a random string as nonce
             'jti': str(binascii.hexlify(os.urandom(16)), 'ascii'),
@@ -47,3 +48,33 @@ def authenticate(dbSession, authData):
         return str(encoded, 'ascii')
 
     raise HTTPRequestError(401, 'not authorized')
+
+
+# this helper function receive a base64 JWT token
+# the function decodes the JWT, check the signature (if configured to check)
+# and returns the jwt payload as a python dictionary
+def getJwtPayload(rawJWT):
+    try:
+        jwtPayload = jwt.decode(rawJWT, verify=False)
+    except jwt.exceptions.DecodeError:
+        raise HTTPRequestError(401, "Corrupted JWT")
+
+    try:
+        user_id = jwtPayload['userid']
+    except KeyError:
+        raise HTTPRequestError(401, "Invalid JWT payload")
+
+    # now that we know the user, we know the secret
+    # and can check the jwt signature
+    if conf.checkJWTSign:
+        try:
+            user = dbSession.query(User). \
+                    filter_by(user_id=jwtPayload['userid']).one()
+            options = {
+                'verify_exp': False,
+            }
+            jwt.decode(rawJWT,
+                       user.secret, algorithm='HS256', options=options)
+        except (jwt.exceptions.DecodeError, sqlalchemy.orm.exc.NoResultFound):
+            raise HTTPRequestError(401, "Invalid JWT signaure")
+    return jwtPayload

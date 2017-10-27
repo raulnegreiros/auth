@@ -1,5 +1,7 @@
 import logging
 import requests
+import binascii
+import os
 from requests import ConnectionError
 
 import conf
@@ -11,11 +13,11 @@ LOGGER.setLevel(logging.INFO)
 
 
 def configureKong(user):
-    # Disable Kong not advised. Only use for debug purposes
+    # Disable Kong is not advised. Only use for debug purposes
     if conf.kongURL == 'DISABLED':
         return {
                 'key': 'nokey',
-                'secret': 'nosecret',
+                'secret': str(binascii.hexlify(os.urandom(16)), 'ascii'),
                 'kongid': 'noid'
                 }
 

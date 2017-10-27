@@ -19,6 +19,7 @@ import kongUtils as kong
 from database.flaskAlchemyInit import app, db, formatResponse, \
                         HTTPRequestError, make_response, loadJsonFromRequest
 from database.Models import MVUserPermission, MVGroupPermission
+import database.Cache as cache
 
 
 # Authenticion endpoint
@@ -368,6 +369,13 @@ def getGroupUsers(group):
     else:
         usersSafe = list(map(lambda p: p.safeDict(), users))
         return make_response(json.dumps({"users": usersSafe}), 200)
+
+
+@app.route('/admin/dropcache', methods=['DELETE'])
+def dropCache():
+    cache.deleteKey()
+    return formatResponse(200)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)
