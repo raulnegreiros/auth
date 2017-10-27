@@ -1,18 +1,21 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import ForeignKey, Enum, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
-import sqlalchemy
 import enum
 
 import conf as dbconf
-from flaskAlchemyInit import app, db
+from .flaskAlchemyInit import app, db
+from .materialized_view_factory import create_mat_view
+from .materialized_view_factory import refresh_mat_view
 
 
 class PermissionEnum(enum.Enum):
     permit = 'permit'
     deny = 'deny'
+    notApplicable = 'notApplicable'
 
 
 # Model for the database tables
@@ -24,10 +27,12 @@ class Permission(db.Model):
 
     # serialize
     def as_dict(self):
-        return {
-                    c.name: str(getattr(self, c.name))
+        tmpDict = {
+                    c.name: getattr(self, c.name)
                     for c in self.__table__.columns
-                }
+                  }
+        tmpDict['permission'] = tmpDict['permission'].value
+        return tmpDict
 
     def safeDict(self):
         return self.as_dict()
@@ -36,10 +41,9 @@ class Permission(db.Model):
     path = Column(String, nullable=False)
     method = Column(String(30), nullable=False)
     permission = Column(Enum(PermissionEnum), nullable=False)
-    users = relationship('User', secondary='user_permission', cascade="delete")
+    users = relationship('User', secondary='user_permission')
     groups = relationship('Group',
-                          secondary='group_permission',
-                          cascade="delete")
+                          secondary='group_permission')
 
 
 class User(db.Model):
@@ -84,9 +88,8 @@ class User(db.Model):
 
     # Table Relationships
     permissions = relationship('Permission',
-                               secondary='user_permission',
-                               cascade="delete")
-    groups = relationship('Group', secondary='user_group', cascade="delete")
+                               secondary='user_permission')
+    groups = relationship('Group', secondary='user_group')
 
 
 class Group(db.Model):
@@ -116,9 +119,8 @@ class Group(db.Model):
 
     # Table ralationships
     permissions = relationship('Permission',
-                               secondary='group_permission',
-                               cascade="delete")
-    users = relationship('User', secondary='user_group', cascade="delete")
+                               secondary='group_permission')
+    users = relationship('User', secondary='user_group')
 
 
 class UserPermission(db.Model):
@@ -149,3 +151,53 @@ class UserGroup(db.Model):
     group_id = Column(Integer,
                       ForeignKey('group.id'),
                       primary_key=True, index=True)
+
+
+class MVUserPermission(db.Model):
+    selectClause = db.select([UserPermission.user_id,
+                             Permission.id,
+                             Permission.path,
+                             Permission.method,
+                             Permission.permission, ]
+                             ).select_from(db.join(UserPermission, Permission))
+    # print(selectClause)
+    __table__ = create_mat_view('mv_user_permission',
+                                selectClause)
+
+    # SQLAlchemy require a unique primary key to map ORM objects
+    __table_args__ = (
+        PrimaryKeyConstraint('user_id', 'id'),
+        {},
+    )
+
+    def refresh(concurrently=False):
+        refresh_mat_view('mv_user_permission', concurrently)
+
+
+db.Index('mv_user_permission_user_idx', MVUserPermission.user_id, unique=False)
+
+
+class MVGroupPermission(db.Model):
+    selectClause = db.select([GroupPermission.group_id,
+                             Permission.id,
+                             Permission.path,
+                             Permission.method,
+                             Permission.permission, ]
+                             ).select_from(db.join(GroupPermission,
+                                                   Permission))
+
+    __table__ = create_mat_view('mv_group_permission',
+                                selectClause)
+
+    # SQLAlchemy require a unique primary key to map ORM objects
+    __table_args__ = (
+        PrimaryKeyConstraint('group_id', 'id'),
+        {},
+    )
+
+    def refresh(concurrently=False):
+        refresh_mat_view('mv_group_permission', concurrently)
+
+
+db.Index('mv_group_permission_user_idx',
+         MVGroupPermission.group_id, unique=False)

@@ -27,13 +27,61 @@ docker build -t <tag> -f docker/Dockerfile .
 ```
 
 ## configuration
-If you are running without docker, You will need to create the database tables
-before the first run.
+# database related configuration
+
+Some auth configuration is made using environment variables.
+On a Linux system one can set a environment variable with the command
+```shell
+  export VAR_NAME=varvalue
+```
+
+on a docker-compose schema, one can set environment variables for a container
+Append the following configuration
+```shell
+  environment:
+      VAR_NAME: "varvalue"
+```
+
+The default value is used if the configuration was not provided
+The following variables can be set
+
+  * DB_NAME
+	    	* database type. Current only postgres is supported
+	    	* default: postgres
+
+  * DB_USER
+	    	* The username used to access the database
+	    	* default: auth
+
+  * DB_PWD
+        * The password used to access the database
+        * default: empty password
+
+  * DB_HOST
+        * The URL used to connect to the database
+        * default: http://postgres
+
+  * KONG_URL
+        * The URL where the Kong service can be found
+        * default: http://Kong:8001
+
+  * TOKEN_EXP
+        * Expiration time in second for generated JWT tokens
+        * default: 420
+
+
+If you are running without docker, You will need to create and populate
+the database tables before the first run.
 
 python3 shell:
 ```shell
 >>> from webRouter import db
 >>> db.create_all()
+```
+
+Create the initial users, groups and permissions
+```shell
+  python3 initialConf.py
 ```
 
 ## API

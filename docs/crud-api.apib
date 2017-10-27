@@ -41,16 +41,16 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
   {
       "permissions": [
         {
-            "id" : "131",
+            "id" : 131,
             "path" : "/devices/info/\*",
             "method" : "POST|PUT|DELETE",
-            "permission" : "PermissionEnum.permit"
+            "permission" : "permit"
         },
         {
-            "id" : "132",
+            "id" : 132,
             "path" : "/auth/user",
             "method" : "\*",
-            "permission" : "PermissionEnum.deny"
+            "permission" : "deny"
         }
       ]
     }
@@ -65,10 +65,10 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
 
 + Response 200 (application/json)
   {
-      "id" : "131",
+      "id" : 131,
       "path" : "/devices/info/\*",
       "method" : "POST|PUT|DELETE",
-      "permission" : "PermissionEnum.permit"
+      "permission" : "permit"
   }
 
 ### Update a permission [PUT]

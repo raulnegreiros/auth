@@ -5,7 +5,7 @@ import os
 
 
 # database related configuration
-dbName = str(os.environ.get("DB_NAME", "postgres"))
+dbName = os.environ.get("DB_NAME", "postgres")
 dbUser = os.environ.get("DB_USER", "auth")
 dbPdw = os.environ.get("DB_PWD", "")
 dbHost = os.environ.get("DB_HOST", "postgres")

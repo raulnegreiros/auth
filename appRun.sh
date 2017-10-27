@@ -1,12 +1,16 @@
 #!/bin/bash
 
 # wait for database
-python3 /usr/src/app/appLock.py --sleep 10 --max_retries 10
+python3 /usr/src/app/appLock.py --sleep 10 --max_retries 10 > /dev/null
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
 cd auth
-#create database tables
+
+# create database tables
 echo -e "from webRoutes import db\ndb.create_all()" | python3
+
+# create predefined users and groups
+python3 /usr/src/app/auth/initialConf.py
 
 # handle service initialization
 if [ $1 = 'start' ]; then

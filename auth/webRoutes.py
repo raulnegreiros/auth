@@ -10,12 +10,15 @@ from flask import request
 import json
 
 import conf
-import database.CRUDController as crud
-import database.RelationshipController as rship
-import authentication as auth
+import controller.CRUDController as crud
+import controller.RelationshipController as rship
+import controller.PDPController as pdpc
+import controller.AuthenticationController as auth
+import controller.ReportController as reports
 import kongUtils as kong
-from flaskAlchemyInit import app, db, formatResponse, HTTPRequestError, \
-                             make_response, loadJsonFromRequest
+from database.flaskAlchemyInit import app, db, formatResponse, \
+                        HTTPRequestError, make_response, loadJsonFromRequest
+from database.Models import MVUserPermission, MVGroupPermission
 
 
 # Authenticion endpoint
@@ -23,17 +26,8 @@ from flaskAlchemyInit import app, db, formatResponse, HTTPRequestError, \
 def authenticate():
     try:
         authData = loadJsonFromRequest(request)
-        if 'username' not in authData.keys():
-            return formatResponse(400, 'missing username')
-        if 'passwd' not in authData.keys():
-            return formatResponse(400, 'missing passwd')
-
-        jwt = auth.authenticate(db.session,
-                                authData['username'],
-                                authData['passwd'])
-
+        jwt = auth.authenticate(db.session, authData)
         return make_response(json.dumps({'jwt': jwt}), 200)
-
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -119,6 +113,8 @@ def removeUser(userid):
         old_user = crud.getUser(db.session, int(userid))
         kong.removeFromKong(old_user.username)
         crud.deleteUser(db.session, int(userid))
+        MVUserPermission.refresh()
+        MVGroupPermission.refresh()
         db.session.commit()
         return formatResponse(200, "User removed")
     except HTTPRequestError as err:
@@ -187,6 +183,8 @@ def deletePermission(permid):
         crud.getPerm(db.session, int(permid))
         crud.deletePerm(db.session, int(permid))
         db.session.commit()
+        MVUserPermission.refresh()
+        MVGroupPermission.refresh()
         return formatResponse(200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
@@ -248,6 +246,7 @@ def deleteGroup(groupId):
     try:
         crud.getGroup(db.session, int(groupId))
         crud.deleteGroup(db.session, int(groupId))
+        MVGroupPermission.refresh()
         db.session.commit()
         return formatResponse(200)
     except HTTPRequestError as err:
@@ -275,6 +274,7 @@ def addGroupPermission(group, permissionid):
             rship.addGroupPermission(db.session, group, int(permissionid))
         else:
             rship.removeGroupPermission(db.session, group, int(permissionid))
+        MVGroupPermission.refresh()
         db.session.commit()
         return formatResponse(200)
     except HTTPRequestError as err:
@@ -289,11 +289,85 @@ def addUserPermission(user, permissionid):
             rship.addUserPermission(db.session, user, int(permissionid))
         else:
             rship.removeUserPermission(db.session, user, int(permissionid))
+        MVUserPermission.refresh()
         db.session.commit()
         return formatResponse(200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
+
+@app.route('/pdp', methods=['POST'])
+def pdpRequest():
+    try:
+        pdpData = loadJsonFromRequest(request)
+        veredict = pdpc.pdpMain(db.session, pdpData)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        return make_response(json.dumps({
+                                        "decision": veredict,
+                                        "status": "ok"
+                                        }), 200)
+
+
+#  Reports endpoints
+@app.route('/pap/user/<user>/directpermissions', methods=['GET'])
+def getUserDiectPermissions(user):
+    try:
+        permissions = reports.getUserDiectPermissions(db.session, user)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({
+                                        "permissions": permissionsSafe
+                                        }), 200)
+
+
+@app.route('/pap/user/<user>/allpermissions', methods=['GET'])
+def getAllUserPermissions(user):
+    try:
+        permissions = reports.getAllUserPermissions(db.session, user)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({
+                                        "permissions": permissionsSafe
+                                        }), 200)
+
+
+@app.route('/pap/user/<user>/groups', methods=['GET'])
+def getUserGrups(user):
+    try:
+        groups = reports.getUserGrups(db.session, user)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        groupsSafe = list(map(lambda p: p.safeDict(), groups))
+        return make_response(json.dumps({"groups": groupsSafe}), 200)
+
+
+@app.route('/pap/group/<group>/permissions', methods=['GET'])
+def getGroupPermissions(group):
+    try:
+        permissions = reports.getGroupPermissions(db.session, group)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({"permissions": permissionsSafe}), 200)
+
+
+@app.route('/pap/group/<group>/users', methods=['GET'])
+def getGroupUsers(group):
+    try:
+        users = reports.getGroupUsers(db.session, group)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        usersSafe = list(map(lambda p: p.safeDict(), users))
+        return make_response(json.dumps({"users": usersSafe}), 200)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)

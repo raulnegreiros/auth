@@ -7,7 +7,8 @@ import binascii
 from pbkdf2 import crypt
 
 from database.Models import Permission, User, Group, PermissionEnum
-from flaskAlchemyInit import HTTPRequestError
+from database.Models import UserPermission, GroupPermission, UserGroup
+from database.flaskAlchemyInit import HTTPRequestError
 
 
 # Helper function to check user fields
@@ -145,6 +146,12 @@ def updateUser(dbSession, userId: int, updatedInfo):
 def deleteUser(dbSession, userId: int):
     try:
         user = dbSession.query(User).filter_by(id=userId).one()
+        dbSession.execute(
+            UserPermission.__table__.delete(UserPermission.user_id == user.id)
+        )
+        dbSession.execute(
+            UserGroup.__table__.delete(UserGroup.user_id == user.id)
+        )
         dbSession.delete(user)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID")
@@ -167,7 +174,18 @@ def checkPerm(perm):
 
     if 'method' not in perm.keys() or len(perm['method']) == 0:
         raise HTTPRequestError(400, "Missing permission method")
-    # TODO: check if path and method are valid regex
+
+    try:
+        re.match(r'(^' + perm['path'] + ')', "")
+    except sre_constants.error:
+        raise HTTPRequestError(perm['method']
+                               + " is not a valid regular expression.")
+
+    try:
+        re.match(r'(^' + perm['path'] + ')', "")
+    except sre_constants.error:
+        raise HTTPRequestError(perm['method']
+                               + " is not a valid regular expression.")
 
 
 def createPerm(dbSession, permission):
@@ -221,6 +239,14 @@ def updatePerm(dbSession, permissionId: int, permData):
 def deletePerm(dbSession, permissionId):
     try:
         perm = dbSession.query(Permission).filter_by(id=permissionId).one()
+        dbSession.execute(
+            UserPermission.__table__
+            .delete(UserPermission.permission_id == perm.id)
+        )
+        dbSession.execute(
+            GroupPermission.__table__
+            .delete(GroupPermission.permission_id == perm.id)
+        )
         dbSession.delete(perm)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
@@ -233,7 +259,7 @@ def checkGroup(group):
         raise HTTPRequestError(400,
                                'Invalid group name, only alhpanumeric allowed')
 
-    # TODO: must chekc the description?
+    # TODO: must check the description?
 
 
 def createGroup(dbSession, groupData):
@@ -283,6 +309,14 @@ def updateGroup(dbSession, groupId: int, groupData):
 def deleteGroup(dbSession, groupId: int):
     try:
         group = dbSession.query(Group).filter_by(id=groupId).one()
+        dbSession.execute(
+            GroupPermission.__table__
+            .delete(GroupPermission.group_id == group.id)
+        )
+        dbSession.execute(
+            UserGroup.__table__
+            .delete(UserGroup.group_id == group.id)
+        )
         dbSession.delete(group)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")

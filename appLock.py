@@ -14,7 +14,7 @@ def incRetries():
     global retries
     retries = retries + 1
     if retries >= max_retries:
-        print("max_retries reached. Given up...")
+        print("max_retries reached. Giving up...")
         exit(-1)
 
 

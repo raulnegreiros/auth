@@ -7,18 +7,27 @@ import sqlalchemy
 from pbkdf2 import crypt
 import os
 
-from flaskAlchemyInit import HTTPRequestError
+from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
 import conf
 
 
-def authenticate(dbSession, username, passwd):
+def authenticate(dbSession, authData):
+    if 'username' not in authData.keys():
+        raise HTTPRequestError(400, 'missing username')
+    if 'passwd' not in authData.keys():
+        raise HTTPRequestError(400, 'missing passwd')
+
+    username = authData['username']
+    passwd = authData['passwd']
+
     try:
         user = dbSession.query(User).filter_by(username=username.lower()).one()
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(401, 'not authorized')
 
     if user.hash == crypt(passwd, user.salt, 1000).split('$').pop():
+        groupsId = [g.id for g in user.groups]
 
         claims = {
             'iss': user.key,
@@ -26,7 +35,8 @@ def authenticate(dbSession, username, passwd):
             'exp': int(time.time() + conf.tokenExpiration),
             'name': user.name,
             'email': user.email,
-            'profile': 'admin',
+            'profile': user.profile,  # Obsolete. Kept for compatibility
+            'groups': groupsId,
 
             # Generate a random string as nonce
             'jti': str(binascii.hexlify(os.urandom(16)), 'ascii'),
