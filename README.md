@@ -30,7 +30,7 @@ docker build -t <tag> -f docker/Dockerfile .
 If you are running without docker, You will need to create the database tables
 before the first run.
 
-python shell:
+python3 shell:
 ```shell
 >>> from webRouter import db
 >>> db.create_all()

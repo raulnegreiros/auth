@@ -9,19 +9,24 @@ poolingsec = 5
 max_retries = 10
 retries = 0
 
+
 def incRetries():
     global retries
-    retries =  retries + 1
+    retries = retries + 1
     if retries >= max_retries:
         print("max_retries reached. Given up...")
         exit(-1)
+
 
 def waitPostgres():
     print('Waiting for postgres...')
     retries = 0
     while (True):
         try:
-            db = postgresql.open('pq://' + dbconf.dbUser + ':' + dbconf.dbPdw + '@' + dbconf.dbHost)
+            db = postgresql.open('pq://'
+                                 + dbconf.dbUser
+                                 + ':' + dbconf.dbPdw
+                                 + '@' + dbconf.dbHost)
             if db is not None:
                 break
         except postgresql.exceptions.ClientCannotConnectError as e:
@@ -31,6 +36,7 @@ def waitPostgres():
         print('Will try again in ' + str(poolingsec))
         sleep(poolingsec)
     print('Postgres is ready')
+
 
 def verifyParams():
     i = 1
@@ -45,6 +51,7 @@ def verifyParams():
             i = i + 1
 
         i = i + 1
+
 
 if __name__ == '__main__':
     verifyParams()
