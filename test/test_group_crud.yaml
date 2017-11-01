@@ -1,0 +1,105 @@
+---
+# Create, get and delete a user
+- config:
+    - testset: "Group CRUD Tests"
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Make sure group group1Test ISN'T there to begin with"
+    - url: "/pap/group/group1Test"
+    - expected_status: [404]
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Create group group1Test"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1Test",
+                "desc": "just a group for tests"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Make sure group1Test is there after we added it"
+    - url: "/pap/group/group1Test"
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Get rid of group1Test!"
+    - url: "/pap/group/group1Test"
+    - method: 'DELETE'
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Make sure group1Test ISN'T there after we deleted it"
+    - url: "/pap/group/group1Test"
+    - expected_status: [404]
+
+# duplicate constraints test
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Create group uniqueGroup"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "uniqueGroup",
+                "desc": "just a group for tests"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Try to create duplicate grup name"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "uniqueGroup",
+                "desc": "this group should not be created"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [400]
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Get rid of uniqueGroup!"
+    - url: "/pap/group/uniqueGroup"
+    - method: 'DELETE'
+
+# invalid HTTP request
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Create group no mimetipe"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1Test",
+                "desc": "just a group for tests"
+              }'
+    - expected_status: [400]
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Create group invalid mimetype"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1Test",
+                "desc": "just a group for tests"
+              }'
+    - headers: {'Content-Type': 'application/xml'}
+    - expected_status: [400]
+
+- test:
+    - group: "GROUP SANE CRUD"
+    - name: "Create group broken json"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1Test,
+                "desc": "just a group for tests"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [400]

@@ -75,20 +75,20 @@ def listUsers():
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/user/<userid>', methods=['GET'])
-def getUser(userid):
+@app.route('/user/<user>', methods=['GET'])
+def getUser(user):
     try:
-        user = crud.getUser(db.session, int(userid))
+        user = crud.getUser(db.session, user)
         return make_response(json.dumps({"user": user.safeDict()}), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/user/<userid>', methods=['PUT'])
-def updateUser(userid):
+@app.route('/user/<user>', methods=['PUT'])
+def updateUser(user):
     try:
         authData = loadJsonFromRequest(request)
-        oldUser = crud.updateUser(db.session, int(userid), authData)
+        oldUser = crud.updateUser(db.session, userid, authData)
 
         # Create a new kong secret and delete the old one
         kongData = kong.configureKong(oldUser.username)
@@ -108,12 +108,12 @@ def updateUser(userid):
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/user/<userid>', methods=['DELETE'])
-def removeUser(userid):
+@app.route('/user/<user>', methods=['DELETE'])
+def removeUser(user):
     try:
-        old_user = crud.getUser(db.session, int(userid))
+        old_user = crud.getUser(db.session, user)
         kong.removeFromKong(old_user.username)
-        crud.deleteUser(db.session, int(userid))
+        crud.deleteUser(db.session, user)
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
         db.session.commit()
@@ -222,31 +222,30 @@ def listGroup():
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/group/<groupId>', methods=['GET'])
-def getGroup(groupId):
+@app.route('/pap/group/<group>', methods=['GET'])
+def getGroup(group):
     try:
-        group = crud.getGroup(db.session, int(groupId))
+        group = crud.getGroup(db.session, group)
         return make_response(json.dumps(group.safeDict()), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/group/<groupId>', methods=['PUT'])
-def updateGroup(groupId):
+@app.route('/pap/group/<group>', methods=['PUT'])
+def updateGroup(group):
     try:
         groupData = loadJsonFromRequest(request)
-        crud.updateGroup(db.session, int(groupId), groupData)
+        crud.updateGroup(db.session, group, groupData)
         db.session.commit()
         return formatResponse(200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/group/<groupId>', methods=['DELETE'])
-def deleteGroup(groupId):
+@app.route('/pap/group/<group>', methods=['DELETE'])
+def deleteGroup(group):
     try:
-        crud.getGroup(db.session, int(groupId))
-        crud.deleteGroup(db.session, int(groupId))
+        crud.deleteGroup(db.session, group)
         MVGroupPermission.refresh()
         db.session.commit()
         return formatResponse(200)

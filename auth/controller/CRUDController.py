@@ -40,7 +40,7 @@ def checkUser(user, ignore=[]):
     if 'email' not in user.keys() or len(user['email']) == 0:
         raise HTTPRequestError(400, "Missing email")
     if re.match(
-                r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)',
+                r'(^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9-.]+$)',
                 user['email']
                 ) is None:
         raise HTTPRequestError(400, "Invalid email address")
@@ -92,22 +92,22 @@ def searchUser(dbSession, username=None):
     return users
 
 
-def getUser(dbSession, userId: int):
+def getUser(dbSession, user):
     try:
-        user = dbSession.query(User).filter_by(id=userId).one()
+        user = User.getByNameOrID(user)
         return user
     except (sqlalchemy.orm.exc.NoResultFound, ValueError):
         raise HTTPRequestError(404, "No user found with this ID")
 
 
-def updateUser(dbSession, userId: int, updatedInfo):
+def updateUser(dbSession, user, updatedInfo):
     # Drop invalid fields
     updatedInfo = {
                     k: updatedInfo[k]
                     for k in updatedInfo
                     if k in User.fillable + ['passwd']
                   }
-    oldUser = getUser(dbSession, userId)
+    oldUser = User.getByNameOrID(user)
 
     if 'username' in updatedInfo.keys() \
             and updatedInfo['username'] != oldUser.username:
@@ -144,9 +144,9 @@ def updateUser(dbSession, userId: int, updatedInfo):
     return oldUser
 
 
-def deleteUser(dbSession, userId: int):
+def deleteUser(dbSession, user):
     try:
-        user = dbSession.query(User).filter_by(id=userId).one()
+        user = User.getByNameOrID(user)
         dbSession.execute(
             UserPermission.__table__.delete(UserPermission.user_id == user.id)
         )
@@ -293,25 +293,26 @@ def searchGroup(dbSession, name=None):
     return groups
 
 
-def getGroup(dbSession, groupId: int):
+def getGroup(dbSession, group):
     try:
-        group = dbSession.query(Group).filter_by(id=groupId).one()
+        group = Group.getByNameOrID(group)
         return group
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")
 
 
-def updateGroup(dbSession, groupId: int, groupData):
+def updateGroup(dbSession, group, groupData):
     groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
     checkGroup(groupData)
-    updated = dbSession.query(Group).filter_by(id=groupId).update(groupData)
+    group = Group.getByNameOrID(group)
+    updated = dbSession.query(Group).filter_by(id=group.id).update(groupData)
     if (updated == 0):
         raise HTTPRequestError(404, "No group found with this ID")
 
 
-def deleteGroup(dbSession, groupId: int):
+def deleteGroup(dbSession, group):
     try:
-        group = dbSession.query(Group).filter_by(id=groupId).one()
+        group = Group.getByNameOrID(group)
         dbSession.execute(
             GroupPermission.__table__
             .delete(GroupPermission.group_id == group.id)

@@ -1,4 +1,4 @@
-#dojot Authentication service
+# dojot Authentication service
 
 
 This service handles user authentication for the platform. Namely this is used to
@@ -45,30 +45,59 @@ Append the following configuration
 The default value is used if the configuration was not provided
 The following variables can be set
 
-  * DB_NAME
+  * AUTH_DB_NAME
 	    	* database type. Current only postgres is supported
 	    	* default: postgres
 
-  * DB_USER
+  * AUTH_DB_USER
 	    	* The username used to access the database
 	    	* default: auth
 
-  * DB_PWD
+  * AUTH_DB_PWD
         * The password used to access the database
         * default: empty password
 
-  * DB_HOST
+  * AUTH_DB_HOST
         * The URL used to connect to the database
         * default: http://postgres
 
-  * KONG_URL
+  * AUTH_KONG_URL
         * The URL where the Kong service can be found
+        * If set to 'DISABLED' Auth won´t try to configure Kong and will generate secrets for the JWT tokens by itself.
         * default: http://Kong:8001
 
-  * TOKEN_EXP
+  * AUTH_TOKEN_EXP
         * Expiration time in second for generated JWT tokens
         * default: 420
 
+  * AUTH_TOKEN_CHECK_SIGN
+        * Whether Auth should verify received JWT signatures. Enabling this will cause one extra query to be performed.
+        * default: False
+
+  * AUTH_CACHE_NAME
+        * Type of cache used. Currently only Redis is suported.
+        * If set to 'NOCACHE' auth will work without cache. Disabling cache usage considerably degrades performance.
+        * default: redis
+
+  * AUTH_CACHE_USER
+        * username to access the cache database
+        * default: redis
+
+  * AUTH_CACHE_PWD
+        * password to acces the cache database
+        * default: empty password
+
+  * AUTH_CACHE_HOST
+        * ip or hostname where the cache can be found
+        * default: redis
+
+  * AUTH_CACHE_TTL
+        * Cache entry time to live in seconds
+        * default: 720
+
+  * AUTH_CACHE_DATABASE
+        * cach database name (or number)
+        * default: '0'
 
 If you are running without docker, You will need to create and populate
 the database tables before the first run.
@@ -97,4 +126,14 @@ aglio -i docs/auth.apib -o docs/auth.html
 
 # serve apis locally
 aglio -i docs/auth.apib -s
+```
+
+## Tests
+
+Auth has some automated test scripts.
+We use [pyresttest](https://github.com/svanoort/pyresttest) format for the test schemas.
+You can run the test with:
+
+```shell
+python resttest.py "http://localhost:port" test/<TEST_FILE>.yaml
 ```
