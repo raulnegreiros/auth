@@ -46,6 +46,24 @@ def removeUserGroup(dbSession, user, group):
         raise HTTPRequestError(404, "User is not a member of the group")
 
 
+# add a user to a list of groups
+def addUserManyGroups(dbSession, user, groups):
+    success = []
+    failed = []
+
+    # if a single group was given. convert to a one element list
+    if not isinstance(groups, list):
+        groups = [groups]
+
+    for g in groups:
+        try:
+            addUserGroup(dbSession, user, g)
+            success.append(g)
+        except HTTPRequestError:
+            failed.append(g)
+    return success, failed
+
+
 def addGroupPermission(dbSession, group, permissionId):
     try:
         group = Group.getByNameOrID(group)

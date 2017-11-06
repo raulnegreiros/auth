@@ -53,8 +53,16 @@ def createUser():
 
         db.session.add(newUser)
         db.session.commit()
+        groupSuccess = []
+        groupFailed = []
+        if 'profile' in authData.keys():
+            groupSuccess, groupFailed = rship. \
+                addUserManyGroups(db.session, newUser.id, authData['profile'])
+        db.session.commit()
         return make_response(json.dumps({
                                         "user": newUser.safeDict(),
+                                        "groups": groupSuccess,
+                                        "could not add": groupFailed,
                                         "message": "user created"
                                         }), 200)
     except HTTPRequestError as err:
@@ -88,7 +96,7 @@ def getUser(user):
 def updateUser(user):
     try:
         authData = loadJsonFromRequest(request)
-        oldUser = crud.updateUser(db.session, userid, authData)
+        oldUser = crud.updateUser(db.session, user, authData)
 
         # Create a new kong secret and delete the old one
         kongData = kong.configureKong(oldUser.username)

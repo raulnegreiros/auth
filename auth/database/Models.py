@@ -1,10 +1,11 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import Column, String, Integer, Boolean, DateTime
 from sqlalchemy import ForeignKey, Enum, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 import enum
+import datetime
 
 import conf as dbconf
 from .flaskAlchemyInit import app, db
@@ -86,6 +87,8 @@ class User(db.Model):
     key = Column(String, nullable=False)
     kongId = Column(String, nullable=False)
 
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
+
     # Table Relationships
     permissions = relationship('Permission',
                                secondary='user_permission')
@@ -117,6 +120,7 @@ class Group(db.Model):
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String, nullable=True)
 
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
     # Table ralationships
     permissions = relationship('Permission',
                                secondary='group_permission')

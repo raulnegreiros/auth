@@ -2,14 +2,13 @@
 # delete Users, groups and permissions
 import sqlalchemy
 import re
-import os
-import binascii
-from pbkdf2 import crypt
 
+import controller.PasswordController as passwd
 from database.Models import Permission, User, Group, PermissionEnum
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
 import database.Cache as cache
+import database.historicModels as inactiveTables
 
 
 # Helper function to check user fields
@@ -72,10 +71,8 @@ def createUser(dbSession, user):
         pass
     else:
         raise HTTPRequestError(400, "Email '" + user['email'] + "' is in use.")
-    user['salt'] = str(binascii.hexlify(os.urandom(8)), 'ascii')
-    user['hash'] = crypt(user['passwd'], user['salt'], 1000).split('$').pop()
+    user['salt'], user['hash'] = passwd.create(user['passwd'])
     del user['passwd']
-
     user = User(**user)
     return user
 
@@ -128,9 +125,9 @@ def updateUser(dbSession, user, updatedInfo):
             pass
 
     if 'passwd' in updatedInfo.keys():
-        oldUser.salt = str(binascii.hexlify(os.urandom(8)), 'ascii')
-        oldUser.hash = crypt(updatedInfo['passwd'],
-                             oldUser.salt, 1000).split('$').pop()
+        oldUser.salt, oldUser.hash = passwd.update(dbSession,
+                                                   oldUser,
+                                                   updatedInfo['passwd'])
         del updatedInfo['passwd']
 
     # TODO: find a iterative way
@@ -154,6 +151,10 @@ def deleteUser(dbSession, user):
             UserGroup.__table__.delete(UserGroup.user_id == user.id)
         )
         cache.deleteKey(userid=user.id)
+        # The user is not hardDeleted.
+        # it should be copied to inactiveUser table
+        inactiveTables.PasswdInactive.createInactiveFromUser(dbSession, user)
+        inactiveTables.UserInactive.createInactiveFromUser(dbSession, user)
         dbSession.delete(user)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID")
