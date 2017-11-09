@@ -65,7 +65,7 @@ def createUser(dbSession, user):
         raise HTTPRequestError(400, "Email '" + user['email'] + "' is in use.")
 
     if conf.emailHost == 'NOEMAIL':
-        user['salt'], user['hash'] = passwd.create(conf.temporaryPassword)
+        user['salt'], user['hash'] = passwd.createPwd(conf.temporaryPassword)
 
     user = User(**user)
     return user

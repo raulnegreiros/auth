@@ -55,6 +55,7 @@ passwdRequestExpiration = int(os.environ.get("AUTH_PASSWD_REQUEST_EXP", 30))
 # to enforce no password repetition policy
 passwdHistoryLen = int(os.environ.get("AUTH_PASSWD_HISTORY_LEN", 4))
 
+passwdMinLen = int(os.environ.get("AUTH_PASSWD_MIN_LEN", 8))
 
 # make some configuration checks
 # and warn if dangerous configuration is found

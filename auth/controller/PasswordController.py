@@ -6,6 +6,7 @@ from pbkdf2 import crypt
 import os
 import sqlalchemy
 import datetime
+from difflib import SequenceMatcher
 
 from database.flaskAlchemyInit import HTTPRequestError
 from database.historicModels import PasswdInactive, PasswordRequestInactive
@@ -14,8 +15,52 @@ from utils.emailUtils import sendMail
 import conf
 
 
-def create(passwd):
-    # TODO: check password format policies
+# check if a password is obvious weak
+# throws a exception if the password fail a test
+def checkPaswordFormat(user, passwd):
+    passwdLen = len(passwd)
+    if passwdLen < conf.passwdMinLen:
+        raise HTTPRequestError(400, 'password must have at least '
+                                    + str(conf.passwdMinLen)
+                                    + ' characters')
+    if passwdLen > 512:
+        raise HTTPRequestError(400, 'Calm down! 512 characters is the '
+                                    ' maximum password len')
+    lowerPwd = passwd.lower()
+
+    # check if the password can be guessed with user info
+    if (
+            SequenceMatcher(None, lowerPwd, user.username)
+            .find_longest_match(0, passwdLen, 0, len(user.username))
+            .size > 4
+            or
+            SequenceMatcher(None, lowerPwd, user.email)
+            .find_longest_match(0, passwdLen, 0, len(user.email))
+            .size > 4
+            or
+            SequenceMatcher(None, lowerPwd, user.name.lower())
+            .find_longest_match(0, passwdLen, 0, len(user.name.lower))
+            .size > 4):
+        raise HTTPRequestError(400, 'Please, choose a password'
+                                    ' harder to guess')
+
+    # check for repeated consecutive characters
+    lastChar = ''
+    count = 1
+    for c in passwd:
+        if (c == lastChar):
+            count += 1
+            if count == 3:
+                raise HTTPRequestError(400, 'do not use passwords with '
+                                            ' repetead characters sequence')
+        else:
+            lastChar = c
+            count = 1
+
+    # check vs a dictionary
+
+
+def createPwd(passwd):
     salt = str(binascii.hexlify(os.urandom(8)), 'ascii')
     hash = crypt(passwd, salt, 1000).split('$').pop()
     return salt, hash
@@ -25,6 +70,8 @@ def create(passwd):
 # verify if the new passwd was used before
 # save the current passwd on inative table
 def update(dbSession, user, newPasswd):
+    checkPaswordFormat(user, newPasswd)
+
     # check actual passwd
     if user.hash and (user.hash ==
                       crypt(newPasswd, user.salt, 1000).split('$').pop()):
@@ -45,7 +92,7 @@ def update(dbSession, user, newPasswd):
                 raise HTTPRequestError(400, "Please, choose a password"
                                             " not used before")
     PasswdInactive.createInactiveFromUser(dbSession, user)
-    return create(newPasswd)
+    return createPwd(newPasswd)
 
 
 # an authenticated user can update it password
