@@ -15,6 +15,7 @@ import controller.RelationshipController as rship
 import controller.PDPController as pdpc
 import controller.AuthenticationController as auth
 import controller.ReportController as reports
+import controller.PasswordController as pwdc
 import kongUtils as kong
 from database.flaskAlchemyInit import app, db, formatResponse, \
                         HTTPRequestError, make_response, loadJsonFromRequest
@@ -59,6 +60,9 @@ def createUser():
             groupSuccess, groupFailed = rship. \
                 addUserManyGroups(db.session, newUser.id, authData['profile'])
         db.session.commit()
+        if conf.emailHost == 'NOEMAIL':
+            pwdc.createPasswordSetRequest(db.session, newUser)
+            db.session.commit()
         return make_response(json.dumps({
                                         "user": newUser.safeDict(),
                                         "groups": groupSuccess,
@@ -225,6 +229,8 @@ def listGroup():
             request.args['name'] if 'name' in request.args else None
         )
         groupsSafe = list(map(lambda p: p.safeDict(), groups))
+        for g in groupsSafe:
+            g['created_date'] = g['created_date'].isoformat()
         return make_response(json.dumps({"groups": groupsSafe}), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
@@ -234,7 +240,9 @@ def listGroup():
 def getGroup(group):
     try:
         group = crud.getGroup(db.session, group)
-        return make_response(json.dumps(group.safeDict()), 200)
+        group = group.safeDict()
+        group['created_date'] = group['created_date'].isoformat()
+        return make_response(json.dumps(group), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -378,6 +386,64 @@ def getGroupUsers(group):
         return make_response(json.dumps({"users": usersSafe}), 200)
 
 
+# passwd related endpoints
+@app.route('/passwd/reset/<username>', methods=['POST'])
+def passwdResetRequest(username):
+    if conf.emailHost == 'NOEMAIL':
+        return formatResponse(501, "Feature not configured")
+    try:
+        pwdc.createPasswordResetRequest(db.session, username)
+        db.session.commit()
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        return formatResponse(200)
+
+
+# passwd related endpoints
+@app.route('/passwd/resetlink', methods=['POST'])
+def passwdReset():
+    try:
+        link = request.args.get('link')
+        resetData = loadJsonFromRequest(request)
+        updatingUser = pwdc.resetPassword(db.session, link, resetData)
+
+        # password updated. Should reconfigure kong and Invalidate
+        # all previous logins
+        kongData = kong.configureKong(updatingUser.username)
+        if kongData is None:
+            return formatResponse(500,
+                                  'failed to configure verification subsystem')
+
+        kong.revokeKongSecret(updatingUser.username, updatingUser.kongId)
+        updatingUser.secret = kongData['secret']
+        updatingUser.key = kongData['key']
+        updatingUser.kongid = kongData['kongid']
+        db.session.add(updatingUser)
+        db.session.commit()
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        return formatResponse(200)
+
+
+@app.route('/passwd/update', methods=['POST'])
+def updatePasswd():
+    try:
+        token = request.headers.get('Authorization')
+        if not token:
+            return formatResponse(401, "not authorized")
+        userId = auth.getJwtPayload(token[7:])['userid']
+        updateData = loadJsonFromRequest(request)
+        pwdc.updateEndpoint(db.session, userId, updateData)
+        db.session.commit()
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
+    else:
+        return formatResponse(200)
+
+
+# endpoint for development use. Should be blocked on prodution
 @app.route('/admin/dropcache', methods=['DELETE'])
 def dropCache():
     cache.deleteKey()

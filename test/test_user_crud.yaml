@@ -38,7 +38,7 @@
 - test:
     - group: "USER SANE CRUD"
     - name: "Make sure Mr alfred ISN'T there after we deleted him"
-    - url: "/user/alfred"
+    - url: "/user/alfred_testuser"
     - expected_status: [404]
 
 # invalid user create request
@@ -144,7 +144,7 @@
 
 - test:
     - group: "USER CREATE INVALID EMAIL"
-    - name: "Should not accept null emailt"
+    - name: "Should not accept null email"
     - url: "/user"
     - method: "POST"
     - body: '{
@@ -160,7 +160,7 @@
 
 - test:
     - group: "USER CREATE INVALID EMAIL"
-    - name: "Should not accept email zerlen"
+    - name: "Should not accept email zerolen"
     - url: "/user"
     - method: "POST"
     - body: '{

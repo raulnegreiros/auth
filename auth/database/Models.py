@@ -79,8 +79,8 @@ class User(db.Model):
     service = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     profile = Column(String, nullable=False)
-    hash = Column(String, nullable=False)
-    salt = Column(String, nullable=False)
+    hash = Column(String, nullable=True)
+    salt = Column(String, nullable=True)
 
     # These fields are configured by kong after user creation
     secret = Column(String, nullable=False)
@@ -155,6 +155,15 @@ class UserGroup(db.Model):
     group_id = Column(Integer,
                       ForeignKey('group.id'),
                       primary_key=True, index=True)
+
+
+# table to keep the temporary password reset links
+class PasswordRequest(db.Model):
+    __tablename__ = 'passwd_request'
+
+    user_id = Column(Integer, primary_key=True, autoincrement=False)
+    link = Column(String, nullable=False, index=True)
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class MVUserPermission(db.Model):

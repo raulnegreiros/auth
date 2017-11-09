@@ -26,6 +26,9 @@ def authenticate(dbSession, authData):
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(401, 'not authorized')
 
+    if not user.hash:
+        raise HTTPRequestError(401, 'This user is inactive')
+
     if user.hash == crypt(passwd, user.salt, 1000).split('$').pop():
         groupsId = [g.id for g in user.groups]
 

@@ -3,7 +3,6 @@
 
 import os
 
-
 # database related configuration
 dbName = os.environ.get("AUTH_DB_NAME", "postgres")
 dbUser = os.environ.get("AUTH_DB_USER", "auth")
@@ -30,3 +29,47 @@ tokenExpiration = int(os.environ.get("AUTH_TOKEN_EXP", 420))
 # query of overhead.
 checkJWTSign = (os.environ.get("AUTH_TOKEN_CHECK_SIGN", "FALSE") in
                 ['true', 'True', 'TRUE'])
+
+# email related configuration
+emailHost = os.environ.get("AUTH_EMAIL_HOST", "NOEMAIL")
+emailPort = int(os.environ.get("AUTH_EMAIL_PORT", 587))
+emailTLS = (os.environ.get("AUTH_EMAIL_TLS", "true") in
+            ['true', 'True', 'TRUE'])
+emailUsername = os.environ.get("AUTH_EMAIL_USER", "")
+emailPasswd = os.environ.get("AUTH_EMAIL_PASSWD", "")
+
+# if you are using a front end with Auth,
+# define this link to point to the password reset view on you FE
+resetPwdView = os.environ.get("AUTH_RESET_PWD_VIEW",
+                              "https://localhost:5000/passwd/resetlink")
+
+# if EMAIL_HOST is set to NOEMAIL a temporary password is given to
+# new users
+temporaryPassword = os.environ.get("AUTH_USER_TMP_PWD", "temppwd")
+
+
+# passwd policies configuration
+# time to expire an password reset link in minutes
+passwdRequestExpiration = int(os.environ.get("AUTH_PASSWD_REQUEST_EXP", 30))
+# how many passwords should be check on the user history
+# to enforce no password repetition policy
+passwdHistoryLen = int(os.environ.get("AUTH_PASSWD_HISTORY_LEN", 4))
+
+
+# make some configuration checks
+# and warn if dangerous configuration is found
+if (emailHost == 'NOEMAIL'):
+    print("Warning: MAIL_HOST set to NOEMAIL. This is unsafe"
+          " and there's no way to reset users forgotten password")
+
+if (emailHost != 'NOEMAIL' and
+   (len(emailUsername) == 0 or len(emailPasswd) == 0)):
+    print('Invalid configuration: No EMAIL_USER or EMAIL_PASSWD defined'
+          ' although a EMAIL_HOST was defined')
+
+if (emailHost != 'NOEMAIL' and not emailTLS):
+    print('Warning: Using e-mail without TLS is not safe')
+
+if (kongURL == 'DISABLED' and not checkJWTSign):
+    print('Warning: Disabling KONG_URL and TOKEN_CHECK_SIGN is dangerous, as'
+          ' auth has no way to guarantee a JWT token is valid')

@@ -28,12 +28,10 @@ def createUsers():
     for user in predefusers:
         # check if the user already exist
         # if the user exist, chances are this scrip has been run before
-        try:
-            anotherUser = db.session.query(User.id) \
-                                .filter_by(username=user['username']).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            pass
-        else:
+        anotherUser = db.session.query(User.id) \
+                                .filter_by(username=user['username']) \
+                                .one_or_none()
+        if anotherUser:
             print("That not the first container run. Skipping")
             exit(0)
 

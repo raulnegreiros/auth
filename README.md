@@ -135,5 +135,5 @@ We use [pyresttest](https://github.com/svanoort/pyresttest) format for the test 
 You can run the test with:
 
 ```shell
-python resttest.py "http://localhost:port" test/<TEST_FILE>.yaml
+python resttest.py "http://authhost:port" test/<TEST_FILE>.yaml
 ```

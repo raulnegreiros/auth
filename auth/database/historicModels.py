@@ -53,6 +53,8 @@ class PasswdInactive(db.Model):
 
     # receives a user model object and save its passwd on inactive table
     def createInactiveFromUser(dbSession, user):
+        if not user.hash:
+            return
         pwdInactiveDict = {
                             'user_id': user.id,
                             'hash': user.hash,
@@ -61,3 +63,26 @@ class PasswdInactive(db.Model):
 
         inactivePwd = PasswdInactive(**pwdInactiveDict)
         dbSession.add(inactivePwd)
+
+
+class PasswordRequestInactive(db.Model):
+    __tablename__ = 'passwd_request_inactive'
+
+    # sqlAlchemy require a primary key on every table
+    inactive_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, autoincrement=False)
+    link = Column(String, nullable=False, index=True)
+    created_date = Column(DateTime, nullable=False)
+    deletion_date = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # receives a PasswordRequest model object and
+    # save its on the inactive table
+    def createInactiveFromRequest(dbSession, pwdRequest):
+        inactiveDict = {
+                        c.name: getattr(pwdRequest, c.name)
+                        for c in PasswordRequestInactive.__table__.columns
+                        if c.name not in historicFields
+                        }
+
+        inactiveRequest = PasswordRequestInactive(**inactiveDict)
+        dbSession.add(inactiveRequest)
