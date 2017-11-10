@@ -9,3 +9,4 @@ gunicorn==19.6.0
 gevent==1.1.1
 json-logging-py==0.2
 flask-redis==0.3.0
+marisa_trie==0.7.4

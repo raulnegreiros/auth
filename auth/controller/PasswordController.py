@@ -7,12 +7,43 @@ import os
 import sqlalchemy
 import datetime
 from difflib import SequenceMatcher
+from marisa_trie import Trie
 
 from database.flaskAlchemyInit import HTTPRequestError
 from database.historicModels import PasswdInactive, PasswordRequestInactive
 from database.Models import PasswordRequest, User
 from utils.emailUtils import sendMail
 import conf
+
+
+# read a password blacklist file
+# and put these password on a trie
+def loadPasswordBlacklist():
+    global passwdBlackList
+    if conf.passwdBlackList == 'NOBLACKLIST':
+        print('No password blacklist file deined.')
+        passwdBlackList = Trie()
+        return
+
+    if os.path.isfile('compiledPwdBlacklist.bin'):
+        print('Loading pre-compiled password blacklist...')
+        passwdBlackList = Trie()
+        passwdBlackList.load('compiledPwdBlacklist.bin')
+
+    else:
+        try:
+            print('Compiling password blacklist...')
+            with open(conf.passwdBlackList, encoding="utf-8") as f:
+                pwds = f.read().splitlines()
+                passwdBlackList = Trie(pwds)
+            passwdBlackList.save('compiledPwdBlacklist.bin')
+        except FileNotFoundError:
+            print('File ' + conf.passwdBlackList + ' not found. Aborting.')
+            exit(-1)
+
+
+# load password blacklist on startup
+loadPasswordBlacklist()
 
 
 # check if a password is obvious weak
@@ -39,10 +70,11 @@ def checkPaswordFormat(user, passwd):
             .size > 4
             or
             SequenceMatcher(None, lowerPwd, user.name.lower())
-            .find_longest_match(0, passwdLen, 0, len(user.name.lower))
+            .find_longest_match(0, passwdLen, 0, len(user.name.lower()))
             .size > 4):
         raise HTTPRequestError(400, 'Please, choose a password'
-                                    ' harder to guess')
+                                    ' harder to guess. Your user info may'
+                                    ' give hints on this password')
 
     # check for dull sequences
     # like 'aaa' '123' 'abc'
@@ -69,11 +101,14 @@ def checkPaswordFormat(user, passwd):
         if count == 3 or countUp == 3 or countDown == 3:
             raise HTTPRequestError(400, 'do not use passwords with '
                                         ' easy to guess'
-                                        'character sequences')
+                                        ' character sequences')
 
         lastChar = c
 
-    # check vs a dictionary
+    # check vs a blacklist
+    if passwd in passwdBlackList:
+        raise HTTPRequestError(400, "This password can't be used, as it is "
+                                    " our blacklist of bad passwords")
 
 
 def createPwd(passwd):

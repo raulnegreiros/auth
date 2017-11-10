@@ -78,3 +78,7 @@ if (emailHost != 'NOEMAIL' and not emailTLS):
 if (kongURL == 'DISABLED' and not checkJWTSign):
     print('Warning: Disabling KONG_URL and TOKEN_CHECK_SIGN is dangerous, as'
           ' auth has no way to guarantee a JWT token is valid')
+
+if (passwdMinLen < 6):
+    print("Password minlen can't be less than 6.")
+    passwdMinLen = 6
