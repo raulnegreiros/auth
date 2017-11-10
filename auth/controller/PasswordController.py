@@ -108,7 +108,7 @@ def checkPaswordFormat(user, passwd):
     # check vs a blacklist
     if passwd in passwdBlackList:
         raise HTTPRequestError(400, "This password can't be used, as it is "
-                                    " our blacklist of bad passwords")
+                                    " in our blacklist of bad passwords")
 
 
 def createPwd(passwd):
