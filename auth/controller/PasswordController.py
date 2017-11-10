@@ -44,18 +44,34 @@ def checkPaswordFormat(user, passwd):
         raise HTTPRequestError(400, 'Please, choose a password'
                                     ' harder to guess')
 
-    # check for repeated consecutive characters
-    lastChar = ''
-    count = 1
+    # check for dull sequences
+    # like 'aaa' '123' 'abc'
+    lastChar = '\0'
+    countEquals = 1
+    countUp = 1
+    countDown = 1
     for c in passwd:
+        if (ord(c) == ord(lastChar) + 1):
+            countUp += 1
+        else:
+            countUp = 1
+
+        if (ord(c) == ord(lastChar) - 1):
+            countDown += 1
+        else:
+            countDown = 1
+
         if (c == lastChar):
             count += 1
-            if count == 3:
-                raise HTTPRequestError(400, 'do not use passwords with '
-                                            ' repetead characters sequence')
         else:
-            lastChar = c
             count = 1
+
+        if count == 3 or countUp == 3 or countDown == 3:
+            raise HTTPRequestError(400, 'do not use passwords with '
+                                        ' easy to guess'
+                                        'character sequences')
+
+        lastChar = c
 
     # check vs a dictionary
 

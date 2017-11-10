@@ -57,6 +57,10 @@ passwdHistoryLen = int(os.environ.get("AUTH_PASSWD_HISTORY_LEN", 4))
 
 passwdMinLen = int(os.environ.get("AUTH_PASSWD_MIN_LEN", 8))
 
+
+passwdBlackList = os.environ.get("AUTH_PASSWD_BLACKLIST",
+                                 "password_blacklist.txt")
+
 # make some configuration checks
 # and warn if dangerous configuration is found
 if (emailHost == 'NOEMAIL'):
