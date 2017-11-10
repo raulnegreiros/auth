@@ -21,7 +21,7 @@ import conf
 def loadPasswordBlacklist():
     global passwdBlackList
     if conf.passwdBlackList == 'NOBLACKLIST':
-        print('No password blacklist file deined.')
+        print('No password blacklist file defined.')
         passwdBlackList = Trie()
         return
 
