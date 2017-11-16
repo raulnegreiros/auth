@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime
 import datetime
 
 import conf as dbconf
+from .inputConf import UserLimits
 from .Models import User
 from .flaskAlchemyInit import app, db
 
@@ -18,10 +19,10 @@ class UserInactive(db.Model):
     __tablename__ = 'user_inactive'
 
     id = Column(Integer, primary_key=True, autoincrement=False)
-    name = Column(String, nullable=False)
-    username = Column(String(50), nullable=False)
-    service = Column(String, nullable=False)
-    email = Column(String, nullable=False, unique=True)
+    name = Column(String(UserLimits.name), nullable=False)
+    username = Column(String(UserLimits.username), nullable=False)
+    service = Column(String(UserLimits.service), nullable=False)
+    email = Column(String(UserLimits.email), nullable=False, unique=False)
     created_date = Column(DateTime, nullable=False)
     deletion_date = Column(DateTime, default=datetime.datetime.utcnow)
 

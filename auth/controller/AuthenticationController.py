@@ -81,3 +81,9 @@ def getJwtPayload(rawJWT):
         except (jwt.exceptions.DecodeError, sqlalchemy.orm.exc.NoResultFound):
             raise HTTPRequestError(401, "Invalid JWT signaure")
     return jwtPayload
+
+
+def userIdFromJWT(token):
+    if not token:
+        return formatResponse(401, "not authorized")
+    userId = auth.getJwtPayload(token[7:])['userid']

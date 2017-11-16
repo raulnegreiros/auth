@@ -16,7 +16,6 @@
     - method: "POST"
     - body: '{
                 "username": "alfred_testuser",
-                "passwd": "exemplepwd",
                 "service": "user",
                 "email": "alfred@noemail.com",
                 "name": "Alfred (TestUser)",
@@ -49,7 +48,6 @@
     - method: "POST"
     - body: '{
                 "username": "123user",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -65,7 +63,6 @@
     - method: "POST"
     - body: '{
                 "username": "us@er",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -80,7 +77,6 @@
     - url: "/user"
     - method: "POST"
     - body: '{
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -97,7 +93,6 @@
     - method: "POST"
     - body: '{
                 "username": "",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -114,7 +109,6 @@
     - method: "POST"
     - body: '{
                 "username": "IMNOTYELLYNG",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -131,7 +125,6 @@
     - method: "POST"
     - body: '{
                 "username": "________",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "irrelevant@noemail.com",
                 "name": "irrelevant (TestUser)",
@@ -149,7 +142,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "name": "irrelevant (TestUser)",
                 "profile": "user"
@@ -165,7 +157,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "",
                 "name": "irrelevant (TestUser)",
@@ -181,7 +172,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "testnoemail.com",
                 "name": "irrelevant (TestUser)",
@@ -197,7 +187,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "test@noemail",
                 "name": "irrelevant (TestUser)",
@@ -214,7 +203,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "test@.com",
                 "name": "irrelevant (TestUser)",
@@ -230,7 +218,6 @@
     - method: "POST"
     - body: '{
                 "username": "validname",
-                "passwd": "irrelevant",
                 "service": "user",
                 "email": "YELLING@MAIL.COM",
                 "name": "irrelevant (TestUser)",
@@ -289,7 +276,6 @@
     - method: "POST"
     - body: '{
                 "username": "unique_testuser",
-                "passwd": "exemplepwd",
                 "service": "user",
                 "email": "uniqueuser@noemail.com",
                 "name": "Unique (TestUser)",
@@ -304,7 +290,6 @@
     - method: "POST"
     - body: '{
                 "username": "unique_testuser",
-                "passwd": "exemplepwd",
                 "service": "user",
                 "email": "anotheremail@noemail.com",
                 "name": "Another (TestUser)",
@@ -320,7 +305,6 @@
     - method: "POST"
     - body: '{
                 "username": "otheruser_testuser",
-                "passwd": "exemplepwd",
                 "service": "user",
                 "email": "uniqueuser@noemail.com",
                 "name": "Another (TestUser)",
@@ -334,3 +318,126 @@
     - name: "Get rid of unique_testuser!"
     - url: "/user/unique_testuser"
     - method: 'DELETE'
+
+
+# edge case inputs
+- test:
+    - group: "USER EDGE LEN INPUT"
+    - name: "Create edge len usernamed alfred"
+    - url: "/user"
+    - method: "POST"
+    - body: '{
+                "username": "alfred_ridiculous_but_acceptable_name123",
+                "service": "user",
+                "email": "alfred@noemail.com",
+                "name": "Alfred (TestUser)",
+                "profile": "user"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+
+
+- test:
+    - group: "USER EDGE LEN INPUT"
+    - name: "Get rid of long named alfred!"
+    - url: "/user/alfred_ridiculous_but_acceptable_name123"
+    - method: 'DELETE'
+
+
+- test:
+    - group: "USER EDGE LEN INPUT"
+    - name: "Create edge len email alfred"
+    - url: "/user"
+    - method: "POST"
+    - body: '{
+                "username": "alfred_testuser",
+                "service": "user",
+                "email": "alfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmartinneroalfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmartinneroalfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmarti@companyabsurdname.com",
+                "name": "Alfred (TestUser)",
+                "profile": "user"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+
+
+- test:
+    - group: "USER EDGE LEN INPUT"
+    - name: "Get rid of long email alfred!"
+    - url: "/user/alfred_testuser"
+    - method: 'DELETE'
+
+# user bad len inputs.
+# these test depends on the values defined on database/inputConf
+- test:
+    - group: "USER BAD LEN INPUT"
+    - name: "Create long usernamed alfred"
+    - url: "/user"
+    - method: "POST"
+    - body: '{
+                "username": "alfred_ridiculous_irrelevant_long_username",
+                "service": "user",
+                "email": "alfred@noemail.com",
+                "name": "Alfred (TestUser)",
+                "profile": "user"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [400]
+
+- test:
+    - group: "USER BAD LEN INPUT"
+    - name: "Create long named alfred"
+    - url: "/user"
+    - method: "POST"
+    - body: '{
+                "username": "alfred",
+                "service": "user",
+                "email": "alfred@noemail.com",
+                "name": "Alfred Blaine Charles David Earl Frederick Gerald Hubert Irvim John Kenneth Loyd Martin Ner",
+                "profile": "user"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [400]
+
+    - test:
+      - group: "USER BAD LEN INPUT"
+      - name: "Create long email alfred"
+      - url: "/user"
+      - method: "POST"
+      - body: '{
+                  "username": "alfred",
+                  "service": "user",
+                  "email": "alfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmartinneroalfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmartinneroalfredblainecharlesdavidearlfrederickgeraldhubertirvimjohnkennethloydmartin@companyabsurdname.com",
+                  "name": "Alfred (TestUser)",
+                  "profile": "user"
+                }'
+      - headers: {'Content-Type': 'application/json'}
+      - expected_status: [400]
+
+      - test:
+        - group: "USER BAD LEN INPUT"
+        - name: "Create long service alfred"
+        - url: "/user"
+        - method: "POST"
+        - body: '{
+                    "username": "alfred",
+                    "service": "user41charXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "email": "alfred@companyname.com",
+                    "name": "Alfred (TestUser)",
+                    "profile": "user"
+                  }'
+        - headers: {'Content-Type': 'application/json'}
+        - expected_status: [400]
+
+
+    - test:
+        - group: "USER BAD LEN INPUT"
+        - name: "Create long proile alfred"
+        - url: "/user"
+        - method: "POST"
+        - body: '{
+                    "username": "alfred",
+                    "service": "user",
+                    "email": "alfred@companyname.com",
+                    "name": "Alfred (TestUser)",
+                    "profile": "longuserprofileeeeeeeeeeeeeeeee"
+                  }'
+        - headers: {'Content-Type': 'application/json'}
+        - expected_status: [400]
