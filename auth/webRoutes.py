@@ -60,7 +60,7 @@ def createUser():
             groupSuccess, groupFailed = rship. \
                 addUserManyGroups(db.session, newUser.id, authData['profile'])
         db.session.commit()
-        if conf.emailHost == 'NOEMAIL':
+        if conf.emailHost != 'NOEMAIL':
             pwdc.createPasswordSetRequest(db.session, newUser)
             db.session.commit()
         return make_response(json.dumps({
@@ -431,7 +431,7 @@ def passwdReset():
 @app.route('/passwd/update', methods=['POST'])
 def updatePasswd():
     try:
-        requesterId = auth.userIdFromJWT(request.headers.get('Authorization'))
+        userId = auth.userIdFromJWT(request.headers.get('Authorization'))
         updateData = loadJsonFromRequest(request)
         pwdc.updateEndpoint(db.session, userId, updateData)
         db.session.commit()

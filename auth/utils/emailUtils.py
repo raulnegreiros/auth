@@ -7,6 +7,7 @@ import conf
 def sendMail(to, subject, htmlMsg):
     if conf.emailHost == 'NOEMAIL':
         return
+    # TODO: I think we should put this function in a worker thread
     msg = MIMEText(htmlMsg, 'html')
 
     msg['Subject'] = subject
