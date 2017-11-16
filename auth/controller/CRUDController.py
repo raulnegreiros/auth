@@ -136,9 +136,11 @@ def updateUser(dbSession, user, updatedInfo):
     return oldUser
 
 
-def deleteUser(dbSession, user):
+def deleteUser(dbSession, user, requesterId):
     try:
         user = User.getByNameOrID(user)
+        if user.id == requesterId:
+            raise HTTPRequestError(400, "a user can't remove himself")
         dbSession.execute(
             UserPermission.__table__.delete(UserPermission.user_id == user.id)
         )

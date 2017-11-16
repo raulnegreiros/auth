@@ -85,5 +85,5 @@ def getJwtPayload(rawJWT):
 
 def userIdFromJWT(token):
     if not token:
-        return formatResponse(401, "not authorized")
-    userId = auth.getJwtPayload(token[7:])['userid']
+        raise HTTPRequestError(401, "not authorized")
+    return getJwtPayload(token[7:])['userid']
