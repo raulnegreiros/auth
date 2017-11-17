@@ -132,6 +132,7 @@ aglio -i docs/auth.apib -s
 
 Auth has some automated test scripts.
 We use [pyresttest](https://github.com/svanoort/pyresttest) format for the test schemas.
+Tests should be run with DISABLED Kong and DISABLED JWT signature verification.
 You can run the test with:
 
 ```shell

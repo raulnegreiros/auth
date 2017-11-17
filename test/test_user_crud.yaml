@@ -33,6 +33,7 @@
     - name: "Get rid of alfred!"
     - url: "/user/alfred_testuser"
     - method: 'DELETE'
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjEsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.kY2ijA593j8rIdpwdsd8qzNsBhEnkI_zQMQ0t2aJQUY'}
 
 - test:
     - group: "USER SANE CRUD"
@@ -265,6 +266,7 @@
     - name: "Delete inexistent user"
     - url: "/user/alfred_testuser"
     - method: "DELETE"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjEsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.kY2ijA593j8rIdpwdsd8qzNsBhEnkI_zQMQ0t2aJQUY'}
     - expected_status: [404]
 
 
@@ -317,6 +319,7 @@
     - group: "INVALID DUPLICATE USER CRUD"
     - name: "Get rid of unique_testuser!"
     - url: "/user/unique_testuser"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjEsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.kY2ijA593j8rIdpwdsd8qzNsBhEnkI_zQMQ0t2aJQUY'}
     - method: 'DELETE'
 
 
@@ -340,6 +343,7 @@
     - group: "USER EDGE LEN INPUT"
     - name: "Get rid of long named alfred!"
     - url: "/user/alfred_ridiculous_but_acceptable_name123"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjEsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.kY2ijA593j8rIdpwdsd8qzNsBhEnkI_zQMQ0t2aJQUY'}
     - method: 'DELETE'
 
 
@@ -362,6 +366,7 @@
     - group: "USER EDGE LEN INPUT"
     - name: "Get rid of long email alfred!"
     - url: "/user/alfred_testuser"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjEsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.kY2ijA593j8rIdpwdsd8qzNsBhEnkI_zQMQ0t2aJQUY'}
     - method: 'DELETE'
 
 # user bad len inputs.
