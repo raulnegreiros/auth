@@ -10,8 +10,13 @@ from flask import Flask
 from flask import make_response as fmake_response
 import json
 from flask_sqlalchemy import SQLAlchemy
+import logging
 
 import conf as dbconf
+
+LOGGER = logging.getLogger('auth.' + __name__)
+LOGGER.addHandler(logging.StreamHandler())
+LOGGER.setLevel(logging.INFO)
 
 # Make the initial flask + alchem configuration
 app = Flask(__name__)
@@ -23,7 +28,7 @@ if (dbconf.dbName == 'postgres'):
                 dbconf.dbUser + ':' + dbconf.dbPdw + '@' + dbconf.dbHost
 
 else:
-    print("Currently, there is no suport for database " + dbconf.dbName)
+    LOGGER.error("Currently, there is no suport for database " + dbconf.dbName)
     exit(-1)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

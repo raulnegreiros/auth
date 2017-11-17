@@ -174,7 +174,7 @@ class MVUserPermission(db.Model):
                              Permission.method,
                              Permission.permission, ]
                              ).select_from(db.join(UserPermission, Permission))
-    # print(selectClause)
+
     __table__ = create_mat_view('mv_user_permission',
                                 selectClause)
 
