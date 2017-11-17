@@ -79,6 +79,5 @@ def makeDecision(permission, method, path):
     # if the Path and method Match
     if re.match(r'(^' + permission.path + ')', path) is not None:
         if re.match(r'(^' + permission.method + ')', method):
-            print("match permission " + str(permission.id))
             return permission.permission
     return PermissionEnum.notApplicable
