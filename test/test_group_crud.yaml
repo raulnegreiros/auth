@@ -18,7 +18,7 @@
                 "name": "group1Test",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -29,6 +29,7 @@
     - group: "GROUP SANE CRUD"
     - name: "Get rid of group1Test!"
     - url: "/pap/group/group1Test"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - method: 'DELETE'
 
 - test:
@@ -48,7 +49,7 @@
                 "name": "uniqueGroup",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -59,7 +60,7 @@
                 "name": "uniqueGroup",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - expected_status: [400]
 
 - test:
@@ -79,6 +80,7 @@
                 "desc": "just a group for tests"
               }'
     - expected_status: [400]
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -89,7 +91,7 @@
                 "name": "group1Test",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/xml'}
+    - headers: {'Content-Type': 'application/xml', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - expected_status: [400]
 
 - test:
@@ -101,7 +103,7 @@
                 "name": "group1Test,
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - expected_status: [400]
 
 
@@ -114,12 +116,13 @@
                 "name": "group1234567890group1234567890",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
 
 - test:
     - group: "GROUP EDGE CASE LEN INPUT"
     - name: "Get rid of the temporary group!"
     - url: "/pap/group/group1234567890group1234567890"
+    - headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - method: 'DELETE'
 
 - test:
@@ -131,5 +134,5 @@
                 "name": "group1234567890group1234567890g",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsIm5hbWUiOiJ0ZXN0QWRtaW4ifQ.4QvsJB0aploWt5LSoS61DUolEEn4ihnSKdZQKGH7dx8'}
     - expected_status: [400]

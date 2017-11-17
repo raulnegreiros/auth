@@ -38,10 +38,11 @@ def authenticate():
 @app.route('/user', methods=['POST'])
 def createUser():
     try:
+        requesterId = auth.userIdFromJWT(request.headers.get('Authorization'))
         authData = loadJsonFromRequest(request)
 
         # Create user
-        newUser = crud.createUser(db.session, authData)
+        newUser = crud.createUser(db.session, authData, requesterId)
 
         # If no problems occur to create user (no exceptions), configure kong
         kongData = kong.configureKong(newUser.username)
@@ -139,8 +140,9 @@ def removeUser(user):
 @app.route('/pap/permission', methods=['POST'])
 def createPermission():
     try:
+        requesterId = auth.userIdFromJWT(request.headers.get('Authorization'))
         permData = loadJsonFromRequest(request)
-        newPerm = crud.createPerm(db.session, permData)
+        newPerm = crud.createPerm(db.session, permData, requesterId)
         db.session.add(newPerm)
         db.session.commit()
         return make_response(json.dumps({
@@ -208,8 +210,9 @@ def deletePermission(permid):
 @app.route('/pap/group', methods=['POST'])
 def createGroup():
     try:
+        requesterId = auth.userIdFromJWT(request.headers.get('Authorization'))
         groupData = loadJsonFromRequest(request)
-        newGroup = crud.createGroup(db.session, groupData)
+        newGroup = crud.createGroup(db.session, groupData, requesterId)
         db.session.add(newGroup)
         db.session.commit()
         return make_response(json.dumps({
@@ -283,14 +286,14 @@ def addUserToGroup(user, group):
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/grouppermissions/<group>/<permissionid>',
+@app.route('/pap/grouppermissions/<group>/<permission>',
            methods=['POST', 'DELETE'])
-def addGroupPermission(group, permissionid):
+def addGroupPermission(group, permission):
     try:
         if request.method == 'POST':
-            rship.addGroupPermission(db.session, group, int(permissionid))
+            rship.addGroupPermission(db.session, group, permission)
         else:
-            rship.removeGroupPermission(db.session, group, int(permissionid))
+            rship.removeGroupPermission(db.session, group, permission)
         MVGroupPermission.refresh()
         db.session.commit()
         return formatResponse(200)
@@ -300,12 +303,12 @@ def addGroupPermission(group, permissionid):
 
 @app.route('/pap/userpermissions/<user>/<permissionid>',
            methods=['POST', 'DELETE'])
-def addUserPermission(user, permissionid):
+def addUserPermission(user, permission):
     try:
         if request.method == 'POST':
-            rship.addUserPermission(db.session, user, int(permissionid))
+            rship.addUserPermission(db.session, user, permissionid)
         else:
-            rship.removeUserPermission(db.session, user, int(permissionid))
+            rship.removeUserPermission(db.session, user, permissionid)
         MVUserPermission.refresh()
         db.session.commit()
         return formatResponse(200)

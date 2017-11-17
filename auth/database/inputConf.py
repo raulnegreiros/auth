@@ -16,8 +16,10 @@ class UserLimits:
 class PermissionLimits:
     path = 254
     method = 30
+    name = 30
 
 
 # groups limits
 class GroupLimits:
     name = 30
+    description = 254

@@ -59,7 +59,7 @@ def checkUser(user, ignore=[]):
     return user
 
 
-def createUser(dbSession, user):
+def createUser(dbSession, user, requesterId):
     # drop invalid fields
     user = {k: user[k] for k in user if k in User.fillable}
     checkUser(user)
@@ -79,6 +79,7 @@ def createUser(dbSession, user):
     if conf.emailHost == 'NOEMAIL':
         user['salt'], user['hash'] = passwd.createPwd(conf.temporaryPassword)
 
+    user['created_by'] = requesterId
     user = User(**user)
     return user
 
@@ -151,8 +152,11 @@ def deleteUser(dbSession, user, requesterId):
 
         # The user is not hardDeleted.
         # it should be copied to inactiveUser table
-        inactiveTables.PasswdInactive.createInactiveFromUser(dbSession, user)
-        inactiveTables.UserInactive.createInactiveFromUser(dbSession, user)
+        inactiveTables.PasswdInactive.createInactiveFromUser(dbSession,
+                                                             user,)
+        inactiveTables.UserInactive.createInactiveFromUser(dbSession,
+                                                           user,
+                                                           requesterId)
         passwd.expirePasswordResetRequests(dbSession, user.id)
         dbSession.delete(user)
     except sqlalchemy.orm.exc.NoResultFound:
@@ -161,6 +165,16 @@ def deleteUser(dbSession, user, requesterId):
 
 # Helper function to check permission fields
 def checkPerm(perm):
+    if 'name' not in perm.keys() or len(perm['name']) == 0:
+        raise HTTPRequestError(400, "Missing permission name")
+    if len(perm['path']) > PermissionLimits.name:
+        raise HTTPRequestError(400, "Name too long")
+    if re.match(r'^[a-z]+[a-z0-9_]', perm['name']) is None:
+        raise HTTPRequestError(400,
+                               'Invalid name. permission names should start'
+                               ' with a letter and only lowercase,'
+                               ' alhpanumeric and underscores are allowed')
+
     if 'permission' in perm.keys():
         if (perm['permission'] not in [p.value for p in PermissionEnum]):
             raise HTTPRequestError(400,
@@ -194,13 +208,14 @@ def checkPerm(perm):
                                + " is not a valid regular expression.")
 
 
-def createPerm(dbSession, permission):
+def createPerm(dbSession, permission, requesterId):
     permission = {
                     k: permission[k]
                     for k in permission
                     if k in Permission.fillable
                  }
     checkPerm(permission)
+    permission['created_by'] = requesterId
     perm = Permission(**permission)
     return perm
 
@@ -242,9 +257,9 @@ def updatePerm(dbSession, permissionId: int, permData):
         raise HTTPRequestError(404, "No permission found with this ID")
 
 
-def deletePerm(dbSession, permissionId):
+def deletePerm(dbSession, permission):
     try:
-        perm = dbSession.query(Permission).filter_by(id=permissionId).one()
+        perm = Permission.getByNameOrID(permission)
         dbSession.execute(
             UserPermission.__table__
             .delete(UserPermission.permission_id == perm.id)
@@ -256,7 +271,7 @@ def deletePerm(dbSession, permissionId):
         cache.deleteKey(action=perm.method, resource=perm.resource)
         dbSession.delete(perm)
     except sqlalchemy.orm.exc.NoResultFound:
-        raise HTTPRequestError(404, "No permission found with this ID")
+        raise HTTPRequestError(404, "No permission found with this ID or name")
 
 
 def checkGroup(group):
@@ -269,10 +284,11 @@ def checkGroup(group):
         raise HTTPRequestError(400,
                                'Invalid group name, only alhpanumeric allowed')
 
-    # TODO: must check the description?
+    if 'desc' in group.keys() and len(group['desc']) > GroupLimits.description:
+        raise HTTPRequestError(400, "Group description is too long")
 
 
-def createGroup(dbSession, groupData):
+def createGroup(dbSession, groupData, requesterId):
     groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
     checkGroup(groupData)
 
@@ -282,6 +298,8 @@ def createGroup(dbSession, groupData):
         raise HTTPRequestError(400,
                                "Group name '"
                                + groupData['name'] + "' is in use.")
+
+    groupData['created_by'] = requesterId
     g = Group(**groupData)
     return g
 
