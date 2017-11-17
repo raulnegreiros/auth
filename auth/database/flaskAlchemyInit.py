@@ -10,17 +10,23 @@ from flask import Flask
 from flask import make_response as fmake_response
 import json
 from flask_sqlalchemy import SQLAlchemy
+from logging.handlers import TimedRotatingFileHandler
 import logging
-
 import conf as dbconf
 
-LOGGER = logging.getLogger('auth.' + __name__)
-LOGGER.addHandler(logging.StreamHandler())
-LOGGER.setLevel(logging.INFO)
 
 # Make the initial flask + alchem configuration
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+# create a logger for or application
+logHandler = TimedRotatingFileHandler('logs/auth.log', when='d',
+                                      interval=1, backupCount=1)
+logHandler.setLevel(logging.DEBUG)
+fileformatter = logging.Formatter('%(asctime)s - %(message)s')
+logHandler.setFormatter(fileformatter)
+app.logger.addHandler(logHandler)
+app.logger.setLevel(logging.DEBUG)
 
 # Select database driver
 if (dbconf.dbName == 'postgres'):
@@ -64,3 +70,7 @@ def loadJsonFromRequest(request):
         raise HTTPRequestError(400, 'invalid mimetype')
 
     return request.get_json()
+
+
+def log():
+    return app.logger

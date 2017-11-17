@@ -10,6 +10,7 @@ import os
 from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
 import conf
+from database.flaskAlchemyInit import log
 
 
 def authenticate(dbSession, authData):
@@ -48,6 +49,7 @@ def authenticate(dbSession, authData):
             'username': user.username
         }
         encoded = jwt.encode(claims, user.secret, algorithm='HS256')
+        log().info('user ' + user.username + ' loged in')
         return str(encoded, 'ascii')
 
     raise HTTPRequestError(401, 'not authorized')
@@ -57,6 +59,12 @@ def authenticate(dbSession, authData):
 # the function decodes the JWT, check the signature (if configured to check)
 # and returns the jwt payload as a python dictionary
 def getJwtPayload(rawJWT):
+    if not rawJWT:
+        raise HTTPRequestError(401, "not authorized")
+
+    if rawJWT.startswith('Bearer'):
+        rawJWT = rawJWT[7:]
+
     try:
         jwtPayload = jwt.decode(rawJWT, verify=False)
     except jwt.exceptions.DecodeError:

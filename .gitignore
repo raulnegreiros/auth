@@ -1,3 +1,4 @@
 *.pyc
 *.bin
 password_blacklist.txt
+auth/logs

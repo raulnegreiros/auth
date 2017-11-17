@@ -7,11 +7,11 @@ from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
 
 
-def getUserDiectPermissions(dbSession, user):
+def getUserDirectPermissions(dbSession, user):
     try:
         user = User.getByNameOrID(user)
     except sqlalchemy.orm.exc.NoResultFound:
-        raise HTTPRequestError(404, "No user found with tihs username or ID")
+        raise HTTPRequestError(404, "No user found with this username or ID")
 
     return user.permissions
 
@@ -20,7 +20,7 @@ def getAllUserPermissions(dbSession, user):
     try:
         user = User.getByNameOrID(user)
     except sqlalchemy.orm.exc.NoResultFound:
-        raise HTTPRequestError(404, "No user found with tihs username or ID")
+        raise HTTPRequestError(404, "No user found with this username or ID")
 
     permissions = user.permissions
     permissions += [perm
@@ -35,7 +35,7 @@ def getUserGrups(dbSession, user):
     try:
         user = User.getByNameOrID(user)
     except sqlalchemy.orm.exc.NoResultFound:
-        raise HTTPRequestError(404, "No user found with tihs username or ID")
+        raise HTTPRequestError(404, "No user found with this username or ID")
     else:
         return user.groups
 

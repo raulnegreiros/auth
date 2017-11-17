@@ -33,7 +33,8 @@ class Permission(db.Model):
                     c.name: getattr(self, c.name)
                     for c in self.__table__.columns
                   }
-        tmpDict['permission'] = tmpDict['permission'].value
+        if type(tmpDict['permission']) != str:
+            tmpDict['permission'] = tmpDict['permission'].value
         return tmpDict
 
     def safeDict(self):
