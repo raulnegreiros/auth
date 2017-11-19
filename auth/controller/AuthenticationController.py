@@ -86,4 +86,8 @@ def getJwtPayload(rawJWT):
 def userIdFromJWT(token):
     if not token:
         raise HTTPRequestError(401, "not authorized")
-    return getJwtPayload(token[7:])['userid']
+    splittedToken = token.split(' ')
+    if len(splittedToken) == 1:
+        return getJwtPayload(splittedToken[0])['userid']
+    else:
+        return getJwtPayload(splittedToken[1])['userid']
