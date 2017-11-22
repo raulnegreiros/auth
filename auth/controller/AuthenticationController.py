@@ -62,8 +62,10 @@ def getJwtPayload(rawJWT):
     if not rawJWT:
         raise HTTPRequestError(401, "not authorized")
 
-    if rawJWT.startswith('Bearer'):
-        rawJWT = rawJWT[7:]
+    # remove the bearer of the token
+    splittedToken = rawJWT.split(' ')
+    if len(splittedToken) > 1:
+        rawJWT = splittedToken[1]
 
     try:
         jwtPayload = jwt.decode(rawJWT, verify=False)
@@ -94,4 +96,4 @@ def getJwtPayload(rawJWT):
 def userIdFromJWT(token):
     if not token:
         raise HTTPRequestError(401, "not authorized")
-    return getJwtPayload(token[7:])['userid']
+    return getJwtPayload(token)['userid']
