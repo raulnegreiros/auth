@@ -66,6 +66,13 @@ passwdMinLen = int(os.environ.get("AUTH_PASSWD_MIN_LEN", 8))
 passwdBlackList = os.environ.get("AUTH_PASSWD_BLACKLIST",
                                  "password_blacklist.txt")
 
+
+useSyslog = (
+                os.environ.get("AUTH_SYSLOG", "False")
+                in ['true', 'True', 'TRUE']
+            )
+
+
 # make some configuration checks
 # and warn if dangerous configuration is found
 if (emailHost == 'NOEMAIL'):

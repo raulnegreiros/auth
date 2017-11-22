@@ -10,7 +10,7 @@ from flask import Flask
 from flask import make_response as fmake_response
 import json
 from flask_sqlalchemy import SQLAlchemy
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 import logging
 import conf as dbconf
 
@@ -25,8 +25,11 @@ logHandler = TimedRotatingFileHandler('logs/auth.log', when='d',
 logHandler.setLevel(logging.DEBUG)
 fileformatter = logging.Formatter('%(asctime)s - %(message)s')
 logHandler.setFormatter(fileformatter)
+
 app.logger.addHandler(logHandler)
 app.logger.setLevel(logging.DEBUG)
+if dbconf.useSyslog:
+    app.logger.addHandler(SysLogHandler('/dev/log'))
 
 # Select database driver
 if (dbconf.dbName == 'postgres'):

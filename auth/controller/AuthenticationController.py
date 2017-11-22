@@ -11,6 +11,7 @@ from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
 import conf
 from database.flaskAlchemyInit import log
+import sqlalchemy
 
 
 def authenticate(dbSession, authData):
@@ -26,6 +27,8 @@ def authenticate(dbSession, authData):
         user = dbSession.query(User).filter_by(username=username.lower()).one()
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(401, 'not authorized')
+    except sqlalchemy.exc.DBAPIError:
+        raise HTTPRequestError(500, 'Problem connecting to database')
 
     if not user.hash:
         raise HTTPRequestError(401, 'This user is inactive')
@@ -90,6 +93,8 @@ def getJwtPayload(rawJWT):
                        user.secret, algorithm='HS256', options=options)
         except (jwt.exceptions.DecodeError, sqlalchemy.orm.exc.NoResultFound):
             raise HTTPRequestError(401, "Invalid JWT signaure")
+        except sqlalchemy.exc.DBAPIError:
+            raise HTTPRequestError(500, 'Problem connecting to database')
     return jwtPayload
 
 

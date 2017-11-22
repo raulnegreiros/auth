@@ -174,11 +174,16 @@ def addPermissionsGroup():
 
 def populate():
     print("Creating initial user and permission...")
-    createUsers()
-    createGroups()
-    createPermissions()
-    addPermissionsGroup()
-    addUserGroups()
+    try:
+        createUsers()
+        createGroups()
+        createPermissions()
+        addPermissionsGroup()
+        addUserGroups()
+    except sqlalchemy.exc.DBAPIError as e:
+        print("Could not connect to the database.")
+        print(e)
+        exit(-1)
 
     # refresh views
     MVUserPermission.refresh()
