@@ -7,6 +7,7 @@ import controller.PasswordController as passwd
 from database.Models import Permission, User, Group, PermissionEnum
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
+from database.inputConf import UserLimits, PermissionLimits, GroupLimits
 import database.Cache as cache
 import database.historicModels as inactiveTables
 import conf
@@ -17,6 +18,9 @@ def checkUser(user, ignore=[]):
     if 'username' not in user.keys() or len(user['username']) == 0:
         raise HTTPRequestError(400, "Missing username")
 
+    if len(user['username']) > UserLimits.username:
+        raise HTTPRequestError(400, "Username too long")
+
     if re.match(r'^[a-z]+[a-z0-9_]', user['username']) is None:
         raise HTTPRequestError(400,
                                'Invalid username. usernames should start with'
@@ -25,6 +29,8 @@ def checkUser(user, ignore=[]):
 
     if 'service' not in user.keys() or len(user['service']) == 0:
         raise HTTPRequestError(400, "Missing service")
+    if len(user['service']) > UserLimits.service:
+        raise HTTPRequestError(400, "Service too long")
     if re.match(r'^[a-z0-9_]+$', user['username']) is None:
         raise HTTPRequestError(400,
                                'Invalid username, only alhpanumeric'
@@ -32,6 +38,8 @@ def checkUser(user, ignore=[]):
 
     if 'email' not in user.keys() or len(user['email']) == 0:
         raise HTTPRequestError(400, "Missing email")
+    if len(user['email']) > UserLimits.email:
+        raise HTTPRequestError(400, "E-mail too long")
     if re.match(
                 r'(^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9-.]+$)',
                 user['email']
@@ -40,9 +48,13 @@ def checkUser(user, ignore=[]):
 
     if 'name' not in user.keys() or len(user['name']) == 0:
         raise HTTPRequestError(400, "Missing user's name (full name)")
+    if len(user['name']) > UserLimits.name:
+        raise HTTPRequestError(400, "Name too long")
 
     if 'profile' not in user.keys() or len(user['profile']) == 0:
         raise HTTPRequestError(400, "Missing profile")
+    if len(user['profile']) > UserLimits.profile:
+        raise HTTPRequestError(400, "Profile name too long")
 
     return user
 
@@ -124,9 +136,11 @@ def updateUser(dbSession, user, updatedInfo):
     return oldUser
 
 
-def deleteUser(dbSession, user):
+def deleteUser(dbSession, user, requesterId):
     try:
         user = User.getByNameOrID(user)
+        if user.id == requesterId:
+            raise HTTPRequestError(400, "a user can't remove himself")
         dbSession.execute(
             UserPermission.__table__.delete(UserPermission.user_id == user.id)
         )
@@ -159,12 +173,16 @@ def checkPerm(perm):
 
     if 'path' not in perm.keys() or len(perm['path']) == 0:
         raise HTTPRequestError(400, "Missing permission Path")
+    if len(perm['path']) > PermissionLimits.path:
+        raise HTTPRequestError(400, "Path too long")
 
     if 'method' not in perm.keys() or len(perm['method']) == 0:
         raise HTTPRequestError(400, "Missing permission method")
+    if len(perm['method']) > PermissionLimits.method:
+        raise HTTPRequestError(400, "Method too long")
 
     try:
-        re.match(r'(^' + perm['path'] + ')', "")
+        re.match(r'(^' + perm['method'] + ')', "")
     except sre_constants.error:
         raise HTTPRequestError(perm['method']
                                + " is not a valid regular expression.")
@@ -244,6 +262,9 @@ def deletePerm(dbSession, permissionId):
 def checkGroup(group):
     if 'name' not in group.keys() or len(group['name']) == 0:
         raise HTTPRequestError(400, 'Missing group name')
+    if len(group['name']) > GroupLimits.name:
+        raise HTTPRequestError(400, "Group name too long")
+
     if re.match(r'^[a-zA-Z0-9]+$', group['name']) is None:
         raise HTTPRequestError(400,
                                'Invalid group name, only alhpanumeric allowed')

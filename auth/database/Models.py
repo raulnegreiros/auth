@@ -8,6 +8,7 @@ import enum
 import datetime
 
 import conf as dbconf
+from .inputConf import UserLimits, PermissionLimits, GroupLimits
 from .flaskAlchemyInit import app, db
 from .materialized_view_factory import create_mat_view
 from .materialized_view_factory import refresh_mat_view
@@ -74,11 +75,11 @@ class User(db.Model):
             return db.session.query(User).filter_by(username=nameOrId).one()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
-    username = Column(String(50), unique=True, nullable=False)
-    service = Column(String, nullable=False)
-    email = Column(String, nullable=False, unique=True)
-    profile = Column(String, nullable=False)
+    name = Column(String(UserLimits.name), nullable=False)
+    username = Column(String(UserLimits.username), unique=True, nullable=False)
+    service = Column(String(UserLimits.service), nullable=False)
+    email = Column(String(UserLimits.email), nullable=False, unique=True)
+    profile = Column(String(UserLimits.profile), nullable=False)
     hash = Column(String, nullable=True)
     salt = Column(String, nullable=True)
 
@@ -117,7 +118,7 @@ class Group(db.Model):
         return self.as_dict()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), unique=True, nullable=False)
+    name = Column(String(GroupLimits.name), unique=True, nullable=False)
     description = Column(String, nullable=True)
 
     created_date = Column(DateTime, default=datetime.datetime.utcnow)

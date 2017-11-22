@@ -60,7 +60,7 @@ def createUser():
             groupSuccess, groupFailed = rship. \
                 addUserManyGroups(db.session, newUser.id, authData['profile'])
         db.session.commit()
-        if conf.emailHost == 'NOEMAIL':
+        if conf.emailHost != 'NOEMAIL':
             pwdc.createPasswordSetRequest(db.session, newUser)
             db.session.commit()
         return make_response(json.dumps({
@@ -123,9 +123,10 @@ def updateUser(user):
 @app.route('/user/<user>', methods=['DELETE'])
 def removeUser(user):
     try:
-        old_user = crud.getUser(db.session, user)
-        kong.removeFromKong(old_user.username)
-        crud.deleteUser(db.session, user)
+        requesterId = auth.userIdFromJWT(request.headers.get('Authorization'))
+        oldUsername = crud.getUser(db.session, user).username
+        crud.deleteUser(db.session, user, requesterId)
+        kong.removeFromKong(oldUsername)
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
         db.session.commit()
@@ -430,10 +431,7 @@ def passwdReset():
 @app.route('/passwd/update', methods=['POST'])
 def updatePasswd():
     try:
-        token = request.headers.get('Authorization')
-        if not token:
-            return formatResponse(401, "not authorized")
-        userId = auth.getJwtPayload(token[7:])['userid']
+        userId = auth.userIdFromJWT(request.headers.get('Authorization'))
         updateData = loadJsonFromRequest(request)
         pwdc.updateEndpoint(db.session, userId, updateData)
         db.session.commit()

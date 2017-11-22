@@ -103,3 +103,33 @@
               }'
     - headers: {'Content-Type': 'application/json'}
     - expected_status: [400]
+
+
+- test:
+    - group: "GROUP EDGE CASE LEN INPUT"
+    - name: "Try to create grup with maximun name len"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1234567890group1234567890",
+                "desc": "this group should not be created"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "GROUP EDGE CASE LEN INPUT"
+    - name: "Get rid of the temporary group!"
+    - url: "/pap/group/group1234567890group1234567890"
+    - method: 'DELETE'
+
+- test:
+    - group: "GROUP BAD LEN INPUT"
+    - name: "Try to create grup with name too long"
+    - url: "/pap/group"
+    - method: "POST"
+    - body: '{
+                "name": "group1234567890group1234567890g",
+                "desc": "this group should not be created"
+              }'
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [400]

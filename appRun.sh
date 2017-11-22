@@ -7,7 +7,7 @@ rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 cd auth
 
 # create database tables
-python3 -c "from webRoutes import db; db.create_all()"   > /dev/null
+python3 -c "from webRoutes import db; db.create_all()"   2> /dev/null
 
 # create predefined users and groups
 python3 /usr/src/app/auth/initialConf.py
