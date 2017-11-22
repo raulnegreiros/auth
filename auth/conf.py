@@ -67,10 +67,7 @@ passwdBlackList = os.environ.get("AUTH_PASSWD_BLACKLIST",
                                  "password_blacklist.txt")
 
 
-useSyslog = (
-                os.environ.get("AUTH_SYSLOG", "False")
-                in ['true', 'True', 'TRUE']
-            )
+logMode = os.environ.get("AUTH_SYSLOG", "STDOUT")
 
 
 # make some configuration checks

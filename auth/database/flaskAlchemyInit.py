@@ -10,7 +10,7 @@ from flask import Flask
 from flask import make_response as fmake_response
 import json
 from flask_sqlalchemy import SQLAlchemy
-from logging.handlers import TimedRotatingFileHandler, SysLogHandler
+from logging.handlers import SysLogHandler
 import logging
 import conf as dbconf
 
@@ -19,17 +19,25 @@ import conf as dbconf
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
-# create a logger for or application
-logHandler = TimedRotatingFileHandler('logs/auth.log', when='d',
-                                      interval=1, backupCount=1)
-logHandler.setLevel(logging.DEBUG)
-fileformatter = logging.Formatter('%(asctime)s - %(message)s')
-logHandler.setFormatter(fileformatter)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-app.logger.addHandler(logHandler)
+
+# create a logger for our application
+if dbconf.logMode == 'STDOUT':
+    streamLogger = logging.StreamHandler()
+    streamLogger.setFormatter(formatter)
+    app.logger.addHandler(streamLogger)
+
+elif dbconf.logMode == 'SYSLOG':
+    sysLogHandler = SysLogHandler('/dev/log')
+    sysLogHandler.setFormatter(formatter)
+    app.logger.addHandler(sysLogHandler)
+
+else:
+    print('Unknow log mode' + dbconf.logMode + '. Aborting')
+    exit(-1)
+
 app.logger.setLevel(logging.DEBUG)
-if dbconf.useSyslog:
-    app.logger.addHandler(SysLogHandler('/dev/log'))
 
 # Select database driver
 if (dbconf.dbName == 'postgres'):
@@ -75,5 +83,6 @@ def loadJsonFromRequest(request):
     return request.get_json()
 
 
+# with this function the logger type is transparent for the application
 def log():
     return app.logger
