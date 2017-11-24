@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # This script creates the initial groups, permissions and users
 
 import binascii
@@ -34,6 +35,8 @@ def createUsers():
         if anotherUser:
             print("That not the first container run. Skipping")
             exit(0)
+        # mark the user as automatically created
+        user['created_by'] = 0
 
         # hash the password
         user['salt'] = str(binascii.hexlify(os.urandom(8)), 'ascii')
@@ -67,6 +70,8 @@ def createGroups():
         }
     ]
     for g in predefGroups:
+        # mark the group as automatically created
+        g['created_by'] = 0
         group = Group(**g)
         db.session.add(group)
     db.session.commit()
@@ -74,33 +79,34 @@ def createGroups():
 
 # A utility function to create a permission dict
 # so the List 'predefPerms' get less verbose
-def permissionDictHelper(id, path, method, permission=PermissionEnum.permit):
+def permissionDictHelper(name, path, method, permission=PermissionEnum.permit):
     return {
-        "id": id,
+        "name": name,
         "path":  path,
         "method": method,
-        "permission": permission
+        "permission": permission,
+        "created_by": 0
     }
 
 
 def createPermissions():
     predefPerms = [
-                    permissionDictHelper(1, "/template/(.*)", "(.*)"),
-                    permissionDictHelper(2, "/template/(.*)", "GET"),
-                    permissionDictHelper(3, "/device/(.*)", "(.*)"),
-                    permissionDictHelper(4, "/device/(.*)", "GET"),
-                    permissionDictHelper(5, "/flows/(.*)", "(.*)"),
-                    permissionDictHelper(6, "/flows/(.*)", "GET"),
-                    permissionDictHelper(7, "/history/(.*)", "(.*)"),
-                    permissionDictHelper(8, "/history/(.*)", "GET"),
-                    permissionDictHelper(9, "/metric/(.*)", "(.*)"),
-                    permissionDictHelper(10, "/metric/(.*)", "GET"),
-                    permissionDictHelper(11, "/mashup/(.*)", "(.*)"),
-                    permissionDictHelper(12, "/mashup/(.*)", "GET"),
-                    permissionDictHelper(13, "/auth/user/(.*)", "(.*)"),
-                    permissionDictHelper(14, "/auth/user/(.*)", "GET"),
-                    permissionDictHelper(15, "/pap/(.*)", "(.*)"),
-                    permissionDictHelper(16, "/pap/(.*)", "GET")
+                permissionDictHelper('all_template', "/template/(.*)", "(.*)"),
+                permissionDictHelper('ro_template', "/template/(.*)", "GET"),
+                permissionDictHelper('all_device', "/device/(.*)", "(.*)"),
+                permissionDictHelper('ro_device', "/device/(.*)", "GET"),
+                permissionDictHelper('all_flows', "/flows/(.*)", "(.*)"),
+                permissionDictHelper('ro_flows', "/flows/(.*)", "GET"),
+                permissionDictHelper('all_history', "/history/(.*)", "(.*)"),
+                permissionDictHelper('ro_history', "/history/(.*)", "GET"),
+                permissionDictHelper('all_metric', "/metric/(.*)", "(.*)"),
+                permissionDictHelper('ro_metric', "/metric/(.*)", "GET"),
+                permissionDictHelper('all_mashup', "/mashup/(.*)", "(.*)"),
+                permissionDictHelper('ro_mashup', "/mashup/(.*)", "GET"),
+                permissionDictHelper('all_user', "/auth/user/(.*)", "(.*)"),
+                permissionDictHelper('ro_user', "/auth/user/(.*)", "GET"),
+                permissionDictHelper('all_pap', "/pap/(.*)", "(.*)"),
+                permissionDictHelper('ro_pap', "/pap/(.*)", "GET")
                 ]
 
     for p in predefPerms:
@@ -132,17 +138,34 @@ def addPermissionsGroup():
     predefGroupPerm = [
         {
             "name": "admin",
-            "permission": [1, 3, 5, 7, 9, 11, 13, 15]
+            "permission": [
+                    'all_template',
+                    'all_device',
+                    'all_flows',
+                    'all_history',
+                    'all_metric',
+                    'all_mashup',
+                    'all_user',
+                    'all_pap'
+            ]
         },
         {
             "name": "user",
-            "permission": [1, 3, 5, 7, 9, 11]
+            "permission": [
+                    'all_template',
+                    'all_device',
+                    'all_flows',
+                    'all_history',
+                    'all_metric',
+                    'all_mashup'
+            ]
         }
     ]
 
     for g in predefGroupPerm:
         groupId = Group.getByNameOrID(g['name']).id
-        for permId in g['permission']:
+        for perm in g['permission']:
+            permId = Permission.getByNameOrID(perm).id
             r = GroupPermission(group_id=groupId, permission_id=permId)
             db.session.add(r)
 
@@ -151,16 +174,22 @@ def addPermissionsGroup():
 
 def populate():
     print("Creating initial user and permission...")
-    createUsers()
-    createGroups()
-    createPermissions()
-    addPermissionsGroup()
-    addUserGroups()
+    try:
+        createUsers()
+        createGroups()
+        createPermissions()
+        addPermissionsGroup()
+        addUserGroups()
+    except sqlalchemy.exc.DBAPIError as e:
+        print("Could not connect to the database.")
+        print(e)
+        exit(-1)
 
     # refresh views
     MVUserPermission.refresh()
     MVGroupPermission.refresh()
     db.session.commit()
+    print("Success")
 
 
 populate()

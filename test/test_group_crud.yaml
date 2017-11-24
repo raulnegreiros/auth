@@ -18,7 +18,7 @@
                 "name": "group1Test",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -29,6 +29,7 @@
     - group: "GROUP SANE CRUD"
     - name: "Get rid of group1Test!"
     - url: "/pap/group/group1Test"
+    - headers: {'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - method: 'DELETE'
 
 - test:
@@ -48,7 +49,7 @@
                 "name": "uniqueGroup",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -59,13 +60,14 @@
                 "name": "uniqueGroup",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - expected_status: [400]
 
 - test:
     - group: "GROUP SANE CRUD"
     - name: "Get rid of uniqueGroup!"
     - url: "/pap/group/uniqueGroup"
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - method: 'DELETE'
 
 # invalid HTTP request
@@ -79,6 +81,7 @@
                 "desc": "just a group for tests"
               }'
     - expected_status: [400]
+    - headers: {'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
 
 - test:
     - group: "GROUP SANE CRUD"
@@ -89,7 +92,7 @@
                 "name": "group1Test",
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/xml'}
+    - headers: {'Content-Type': 'application/xml', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - expected_status: [400]
 
 - test:
@@ -101,7 +104,7 @@
                 "name": "group1Test,
                 "desc": "just a group for tests"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - expected_status: [400]
 
 
@@ -114,12 +117,13 @@
                 "name": "group1234567890group1234567890",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
 
 - test:
     - group: "GROUP EDGE CASE LEN INPUT"
     - name: "Get rid of the temporary group!"
     - url: "/pap/group/group1234567890group1234567890"
+    - headers: {'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - method: 'DELETE'
 
 - test:
@@ -131,5 +135,5 @@
                 "name": "group1234567890group1234567890g",
                 "desc": "this group should not be created"
               }'
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {'Content-Type': 'application/json', 'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOjAsInVzZXJuYW1lIjoidGVzdEFkbWluIn0.5-5OGSQSpzfF_k28IlEeV60NC8UuhAgSo55KAi0aLTU'}
     - expected_status: [400]

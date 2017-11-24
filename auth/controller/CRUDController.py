@@ -11,6 +11,7 @@ from database.inputConf import UserLimits, PermissionLimits, GroupLimits
 import database.Cache as cache
 import database.historicModels as inactiveTables
 import conf
+from database.flaskAlchemyInit import log
 
 
 # Helper function to check user fields
@@ -59,7 +60,7 @@ def checkUser(user, ignore=[]):
     return user
 
 
-def createUser(dbSession, user):
+def createUser(dbSession, user, requester):
     # drop invalid fields
     user = {k: user[k] for k in user if k in User.fillable}
     checkUser(user)
@@ -79,8 +80,12 @@ def createUser(dbSession, user):
     if conf.emailHost == 'NOEMAIL':
         user['salt'], user['hash'] = passwd.createPwd(conf.temporaryPassword)
 
-    user = User(**user)
-    return user
+    user['created_by'] = requester['userid']
+    newUser = User(**user)
+    log().info('user ' + user['username'] + ' created by '
+               + requester['username'],
+               newUser.safeDict())
+    return newUser
 
 
 def searchUser(dbSession, username=None):
@@ -103,7 +108,7 @@ def getUser(dbSession, user):
         raise HTTPRequestError(404, "No user found with this ID")
 
 
-def updateUser(dbSession, user, updatedInfo):
+def updateUser(dbSession, user, updatedInfo, requester):
     # Drop invalid fields
     updatedInfo = {
                     k: updatedInfo[k]
@@ -126,6 +131,9 @@ def updateUser(dbSession, user, updatedInfo):
         if anotherUser:
             raise HTTPRequestError(400, "email already in use")
 
+    log().info('user ' + oldUser.username + ' updated by '
+               + requester['username'],
+               {'oldUser': oldUser.safeDict(), 'newUser': updatedInfo})
     if 'name' in updatedInfo.keys():
         oldUser.name = updatedInfo['name']
     if 'service' in updatedInfo.keys():
@@ -136,10 +144,10 @@ def updateUser(dbSession, user, updatedInfo):
     return oldUser
 
 
-def deleteUser(dbSession, user, requesterId):
+def deleteUser(dbSession, user, requester):
     try:
         user = User.getByNameOrID(user)
-        if user.id == requesterId:
+        if user.id == requester['userid']:
             raise HTTPRequestError(400, "a user can't remove himself")
         dbSession.execute(
             UserPermission.__table__.delete(UserPermission.user_id == user.id)
@@ -151,16 +159,32 @@ def deleteUser(dbSession, user, requesterId):
 
         # The user is not hardDeleted.
         # it should be copied to inactiveUser table
-        inactiveTables.PasswdInactive.createInactiveFromUser(dbSession, user)
-        inactiveTables.UserInactive.createInactiveFromUser(dbSession, user)
+        inactiveTables.PasswdInactive.createInactiveFromUser(dbSession,
+                                                             user,)
+        inactiveTables.UserInactive.createInactiveFromUser(dbSession,
+                                                           user,
+                                                           requester['userid'])
         passwd.expirePasswordResetRequests(dbSession, user.id)
         dbSession.delete(user)
+        log().info('user ' + user.username + ' deleted by '
+                   + requester['username'],
+                   user.safeDict())
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID")
 
 
 # Helper function to check permission fields
 def checkPerm(perm):
+    if 'name' not in perm.keys() or len(perm['name']) == 0:
+        raise HTTPRequestError(400, "Missing permission name")
+    if len(perm['path']) > PermissionLimits.name:
+        raise HTTPRequestError(400, "Name too long")
+    if re.match(r'^[a-z]+[a-z0-9_]', perm['name']) is None:
+        raise HTTPRequestError(400,
+                               'Invalid name. permission names should start'
+                               ' with a letter and only lowercase,'
+                               ' alhpanumeric and underscores are allowed')
+
     if 'permission' in perm.keys():
         if (perm['permission'] not in [p.value for p in PermissionEnum]):
             raise HTTPRequestError(400,
@@ -194,14 +218,18 @@ def checkPerm(perm):
                                + " is not a valid regular expression.")
 
 
-def createPerm(dbSession, permission):
+def createPerm(dbSession, permission, requester):
     permission = {
                     k: permission[k]
                     for k in permission
                     if k in Permission.fillable
                  }
     checkPerm(permission)
+    permission['created_by'] = requester['userid']
     perm = Permission(**permission)
+    log().info('permission ' + perm.name + ' deleted by '
+               + requester['username'],
+               perm.safeDict())
     return perm
 
 
@@ -225,26 +253,34 @@ def searchPerm(dbSession, path=None, method=None, permission=None):
     return perms
 
 
-def getPerm(dbSession, permissionId: int):
+def getPerm(dbSession, permission):
     try:
-        perm = dbSession.query(Permission).filter_by(id=permissionId).one()
+        perm = Permission.getByNameOrID(permission)
         return perm
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
 
 
-def updatePerm(dbSession, permissionId: int, permData):
+def updatePerm(dbSession, permission, permData, requester):
     permData = {k: permData[k] for k in permData if k in Permission.fillable}
     checkPerm(permData)
-    updated = dbSession.query(Permission) \
-                       .filter_by(id=permissionId).update(permData)
-    if (updated == 0):
+    try:
+        perm = Permission.getByNameOrID(permission)
+        if 'name' in permData.keys() and perm.name != permData['name']:
+            raise HTTPRequestError(400, "permission name can't be changed")
+        for key, value in permData.items():
+            setattr(perm, key, value)
+        dbSession.add(perm)
+        log().info('permission ' + perm.name + ' updated by '
+                   + requester['username'],
+                   permData)
+    except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
 
 
-def deletePerm(dbSession, permissionId):
+def deletePerm(dbSession, permission, requester):
     try:
-        perm = dbSession.query(Permission).filter_by(id=permissionId).one()
+        perm = Permission.getByNameOrID(permission)
         dbSession.execute(
             UserPermission.__table__
             .delete(UserPermission.permission_id == perm.id)
@@ -253,10 +289,13 @@ def deletePerm(dbSession, permissionId):
             GroupPermission.__table__
             .delete(GroupPermission.permission_id == perm.id)
         )
-        cache.deleteKey(action=perm.method, resource=perm.resource)
+        cache.deleteKey(action=perm.method, resource=perm.path)
+        log().info('permission ' + str(perm.name) + ' deleted by '
+                   + requester['username'],
+                   perm.safeDict())
         dbSession.delete(perm)
     except sqlalchemy.orm.exc.NoResultFound:
-        raise HTTPRequestError(404, "No permission found with this ID")
+        raise HTTPRequestError(404, "No permission found with this ID or name")
 
 
 def checkGroup(group):
@@ -269,10 +308,11 @@ def checkGroup(group):
         raise HTTPRequestError(400,
                                'Invalid group name, only alhpanumeric allowed')
 
-    # TODO: must check the description?
+    if 'desc' in group.keys() and len(group['desc']) > GroupLimits.description:
+        raise HTTPRequestError(400, "Group description is too long")
 
 
-def createGroup(dbSession, groupData):
+def createGroup(dbSession, groupData, requester):
     groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
     checkGroup(groupData)
 
@@ -282,7 +322,12 @@ def createGroup(dbSession, groupData):
         raise HTTPRequestError(400,
                                "Group name '"
                                + groupData['name'] + "' is in use.")
+
+    groupData['created_by'] = requester['userid']
     g = Group(**groupData)
+    log().info('group ' + g.name + ' created by '
+               + requester['username'],
+               g.safeDict())
     return g
 
 
@@ -306,16 +351,24 @@ def getGroup(dbSession, group):
         raise HTTPRequestError(404, "No group found with this ID")
 
 
-def updateGroup(dbSession, group, groupData):
+def updateGroup(dbSession, group, groupData, requester):
     groupData = {k: groupData[k] for k in groupData if k in Group.fillable}
     checkGroup(groupData)
-    group = Group.getByNameOrID(group)
-    updated = dbSession.query(Group).filter_by(id=group.id).update(groupData)
-    if (updated == 0):
+    try:
+        group = Group.getByNameOrID(group)
+        if 'name' in groupData.keys() and group.name != groupData['name']:
+            raise HTTPRequestError(400, "groups name can't be changed")
+        for key, value in groupData.items():
+            setattr(group, key, value)
+        dbSession.add(group)
+        log().info('group ' + group.name + ' updated by '
+                   + requester['username'],
+                   groupData)
+    except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")
 
 
-def deleteGroup(dbSession, group):
+def deleteGroup(dbSession, group, requester):
     try:
         group = Group.getByNameOrID(group)
         dbSession.execute(
@@ -327,6 +380,9 @@ def deleteGroup(dbSession, group):
             .delete(UserGroup.group_id == group.id)
         )
         cache.deleteKey()
+        log().info('group ' + group.name + ' deleted by '
+                   + requester['username'],
+                   group.safeDict())
         dbSession.delete(group)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")

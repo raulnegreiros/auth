@@ -25,7 +25,7 @@ class Permission(db.Model):
     __tablename__ = 'permission'
 
     # fields that can be filled by user input
-    fillable = ['path', 'method', 'permission']
+    fillable = ['name', 'path', 'method', 'permission']
 
     # serialize
     def as_dict(self):
@@ -33,16 +33,30 @@ class Permission(db.Model):
                     c.name: getattr(self, c.name)
                     for c in self.__table__.columns
                   }
-        tmpDict['permission'] = tmpDict['permission'].value
+        if type(tmpDict['permission']) != str:
+            tmpDict['permission'] = tmpDict['permission'].value
         return tmpDict
 
     def safeDict(self):
         return self.as_dict()
 
+    def getByNameOrID(nameOrId):
+        try:
+            return db.session.query(Permission). \
+                        filter_by(id=int(nameOrId)).one()
+        except ValueError:
+            return db.session.query(Permission).filter_by(name=nameOrId).one()
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    path = Column(String, nullable=False)
-    method = Column(String(30), nullable=False)
+    path = Column(String(PermissionLimits.path), nullable=False)
+    name = Column(String(PermissionLimits.name), nullable=False,
+                  unique=True, index=True)
+    method = Column(String(PermissionLimits.method), nullable=False)
     permission = Column(Enum(PermissionEnum), nullable=False)
+
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
+    created_by = Column(Integer, nullable=False)
+
     users = relationship('User', secondary='user_permission')
     groups = relationship('Group',
                           secondary='group_permission')
@@ -89,6 +103,7 @@ class User(db.Model):
     kongId = Column(String, nullable=False)
 
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
+    created_by = Column(Integer, nullable=False)
 
     # Table Relationships
     permissions = relationship('Permission',
@@ -119,9 +134,11 @@ class Group(db.Model):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(GroupLimits.name), unique=True, nullable=False)
-    description = Column(String, nullable=True)
+    description = Column(String(GroupLimits.description), nullable=True)
 
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
+    created_by = Column(Integer, nullable=False)
+
     # Table ralationships
     permissions = relationship('Permission',
                                secondary='group_permission')
@@ -174,7 +191,7 @@ class MVUserPermission(db.Model):
                              Permission.method,
                              Permission.permission, ]
                              ).select_from(db.join(UserPermission, Permission))
-    # print(selectClause)
+
     __table__ = create_mat_view('mv_user_permission',
                                 selectClause)
 

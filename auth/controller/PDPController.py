@@ -7,6 +7,7 @@ from database.Models import MVUserPermission, MVGroupPermission
 from database.flaskAlchemyInit import HTTPRequestError, app
 from controller.AuthenticationController import getJwtPayload
 import database.Cache as cache
+from database.flaskAlchemyInit import log
 
 
 # Helper function to check request fields
@@ -31,6 +32,9 @@ def pdpMain(dbSession, pdpRequest):
                                   pdpRequest['resource'])
     # Return the cached answer if it exist
     if cachedVeredict:
+        log().info('user ' + user_id + ' '
+                   + cachedVeredict + ' to ' + pdpRequest['action']
+                   + ' on ' + pdpRequest['resource'])
         return cachedVeredict
 
     veredict = iteratePermissions(user_id,
@@ -43,6 +47,9 @@ def pdpMain(dbSession, pdpRequest):
                  pdpRequest['resource'],
                  veredict)
 
+    log.info('user ' + user_id + ' '
+             + veredict + ' to ' + pdpRequest['action']
+             + ' on ' + pdpRequest['resource'])
     return veredict
 
 
@@ -79,6 +86,5 @@ def makeDecision(permission, method, path):
     # if the Path and method Match
     if re.match(r'(^' + permission.path + ')', path) is not None:
         if re.match(r'(^' + permission.method + ')', method):
-            print("match permission " + str(permission.id))
             return permission.permission
     return PermissionEnum.notApplicable

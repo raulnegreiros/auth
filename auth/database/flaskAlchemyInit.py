@@ -10,12 +10,34 @@ from flask import Flask
 from flask import make_response as fmake_response
 import json
 from flask_sqlalchemy import SQLAlchemy
-
+from logging.handlers import SysLogHandler
+import logging
 import conf as dbconf
+
 
 # Make the initial flask + alchem configuration
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+
+# create a logger for our application
+if dbconf.logMode == 'STDOUT':
+    streamLogger = logging.StreamHandler()
+    streamLogger.setFormatter(formatter)
+    app.logger.addHandler(streamLogger)
+
+elif dbconf.logMode == 'SYSLOG':
+    sysLogHandler = SysLogHandler('/dev/log')
+    sysLogHandler.setFormatter(formatter)
+    app.logger.addHandler(sysLogHandler)
+
+else:
+    print('Unknow log mode' + dbconf.logMode + '. Aborting')
+    exit(-1)
+
+app.logger.setLevel(logging.DEBUG)
 
 # Select database driver
 if (dbconf.dbName == 'postgres'):
@@ -23,7 +45,7 @@ if (dbconf.dbName == 'postgres'):
                 dbconf.dbUser + ':' + dbconf.dbPdw + '@' + dbconf.dbHost
 
 else:
-    print("Currently, there is no suport for database " + dbconf.dbName)
+    LOGGER.error("Currently, there is no suport for database " + dbconf.dbName)
     exit(-1)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -59,3 +81,8 @@ def loadJsonFromRequest(request):
         raise HTTPRequestError(400, 'invalid mimetype')
 
     return request.get_json()
+
+
+# with this function the logger type is transparent for the application
+def log():
+    return app.logger

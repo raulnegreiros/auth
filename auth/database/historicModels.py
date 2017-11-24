@@ -12,7 +12,7 @@ from .flaskAlchemyInit import app, db
 # a list of special fields present on all historic tables
 # this list is necessary to avoid 'AttributeError' when coping from
 # non-history objects
-historicFields = ['inactive_id', 'deletion_date']
+historicFields = ['inactive_id', 'deletion_date', 'deleted_by']
 
 
 class UserInactive(db.Model):
@@ -24,19 +24,22 @@ class UserInactive(db.Model):
     service = Column(String(UserLimits.service), nullable=False)
     email = Column(String(UserLimits.email), nullable=False, unique=False)
     created_date = Column(DateTime, nullable=False)
+    created_by = Column(Integer, nullable=False)
+
     deletion_date = Column(DateTime, default=datetime.datetime.utcnow)
+    deleted_by = Column(Integer, nullable=False)
 
     # Kong related fields don't need to be registered on historic
     # password related fields are stored on passwd_inactive table
 
     # receives a user model object and save it on inactive table
-    def createInactiveFromUser(dbSession, user):
+    def createInactiveFromUser(dbSession, user, requesterId):
         userInactiveDict = {
                                 c.name: getattr(user, c.name)
                                 for c in UserInactive.__table__.columns
                                 if c.name not in historicFields
                             }
-
+        userInactiveDict['deleted_by'] = requesterId
         inactiveUser = UserInactive(**userInactiveDict)
         dbSession.add(inactiveUser)
 

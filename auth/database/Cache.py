@@ -1,9 +1,17 @@
 # Redis cache configuration
 # powered by flask-redis: https://github.com/underyx/flask-redis
-import conf
-from .flaskAlchemyInit import app, db
+
 from flask_redis import FlaskRedis
 import redis
+import logging
+
+import conf
+from .flaskAlchemyInit import app, db
+
+LOGGER = logging.getLogger('auth.' + __name__)
+LOGGER.addHandler(logging.StreamHandler())
+LOGGER.setLevel(logging.INFO)
+
 
 if (conf.cacheName == 'redis'):
     REDIS_URL = ('redis://' + conf.cacheUser + ':' + conf.cachePdw
@@ -15,12 +23,13 @@ if (conf.cacheName == 'redis'):
 
 
 elif (conf.cacheName == 'NOCACHE'):
-    print("Warning. Cache policy set to NOCACHE."
-          "This may degrade PDP perfomance.")
+    LOGGER.warning("Warning. Cache policy set to NOCACHE."
+                   "This may degrade PDP perfomance.")
     redis_store = None
 
 else:
-    print("Currently, there is no suport for cache policy " + conf.dbName)
+    LOGGER.error("Currently, there is no suport for cache policy "
+                 + conf.dbName)
     exit(-1)
 
 
@@ -41,7 +50,7 @@ def getKey(userid, action, resource):
                             get(generateKey(userid, action, resource))
             return cachedValue
         except redis.exceptions.ConnectionError:
-            print("Failed to connect to redis")
+            LOGGER.warning("Failed to connect to redis")
             return None
 
 
@@ -56,7 +65,7 @@ def setKey(userid, action, resource, veredict):
                           conf.cacheTtl   # time to live
                           )
     except redis.exceptions.ConnectionError:
-        print("Failed to connect to redis")
+        LOGGER.warning("Failed to connect to redis")
 
 
 # invalidate a key. may use regex patterns
@@ -71,4 +80,4 @@ def deleteKey(userid='*', action='*', resource='*'):
             for dkey in redis_store.scan_iter(key):
                 redis_store.delete(dkey)
         except redis.exceptions.ConnectionError:
-            print("Failed to connect to redis")
+            LOGGER.warning("Failed to connect to redis")

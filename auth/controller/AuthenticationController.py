@@ -10,6 +10,8 @@ import os
 from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
 import conf
+from database.flaskAlchemyInit import log
+import sqlalchemy
 
 
 def authenticate(dbSession, authData):
@@ -25,6 +27,8 @@ def authenticate(dbSession, authData):
         user = dbSession.query(User).filter_by(username=username.lower()).one()
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(401, 'not authorized')
+    except sqlalchemy.exc.DBAPIError:
+        raise HTTPRequestError(500, 'Problem connecting to database')
 
     if not user.hash:
         raise HTTPRequestError(401, 'This user is inactive')
@@ -48,6 +52,7 @@ def authenticate(dbSession, authData):
             'username': user.username
         }
         encoded = jwt.encode(claims, user.secret, algorithm='HS256')
+        log().info('user ' + user.username + ' loged in')
         return str(encoded, 'ascii')
 
     raise HTTPRequestError(401, 'not authorized')
@@ -57,6 +62,14 @@ def authenticate(dbSession, authData):
 # the function decodes the JWT, check the signature (if configured to check)
 # and returns the jwt payload as a python dictionary
 def getJwtPayload(rawJWT):
+    if not rawJWT:
+        raise HTTPRequestError(401, "not authorized")
+
+    # remove the bearer of the token
+    splittedToken = rawJWT.split(' ')
+    if len(splittedToken) > 1:
+        rawJWT = splittedToken[1]
+
     try:
         jwtPayload = jwt.decode(rawJWT, verify=False)
     except jwt.exceptions.DecodeError:
@@ -80,14 +93,12 @@ def getJwtPayload(rawJWT):
                        user.secret, algorithm='HS256', options=options)
         except (jwt.exceptions.DecodeError, sqlalchemy.orm.exc.NoResultFound):
             raise HTTPRequestError(401, "Invalid JWT signaure")
+        except sqlalchemy.exc.DBAPIError:
+            raise HTTPRequestError(500, 'Problem connecting to database')
     return jwtPayload
 
 
 def userIdFromJWT(token):
     if not token:
         raise HTTPRequestError(401, "not authorized")
-    splittedToken = token.split(' ')
-    if len(splittedToken) == 1:
-        return getJwtPayload(splittedToken[0])['userid']
-    else:
-        return getJwtPayload(splittedToken[1])['userid']
+    return getJwtPayload(token)['userid']

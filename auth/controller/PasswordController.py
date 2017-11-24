@@ -1,6 +1,7 @@
 # This file contains function that implement password
 # related policies
 
+import logging
 import binascii
 from pbkdf2 import crypt
 import os
@@ -15,30 +16,35 @@ from database.Models import PasswordRequest, User
 from utils.emailUtils import sendMail
 import conf
 
+LOGGER = logging.getLogger('auth.' + __name__)
+LOGGER.addHandler(logging.StreamHandler())
+LOGGER.setLevel(logging.INFO)
+
 
 # read a password blacklist file
 # and put these password on a trie
 def loadPasswordBlacklist():
     global passwdBlackList
     if conf.passwdBlackList == 'NOBLACKLIST':
-        print('No password blacklist file defined.')
+        LOGGER.warning('No password blacklist file defined.')
         passwdBlackList = Trie()
         return
 
     if os.path.isfile('compiledPwdBlacklist.bin'):
-        print('Loading pre-compiled password blacklist...')
+        LOGGER.info('Loading pre-compiled password blacklist...')
         passwdBlackList = Trie()
         passwdBlackList.load('compiledPwdBlacklist.bin')
 
     else:
         try:
-            print('Compiling password blacklist...')
+            LOGGER.info('Compiling password blacklist...')
             with open(conf.passwdBlackList, encoding="utf-8") as f:
                 pwds = f.read().splitlines()
                 passwdBlackList = Trie(pwds)
             passwdBlackList.save('compiledPwdBlacklist.bin')
         except FileNotFoundError:
-            print('File ' + conf.passwdBlackList + ' not found. Aborting.')
+            LOGGER.error('File ' + conf.passwdBlackList
+                         + ' not found. Aborting.')
             exit(-1)
 
 

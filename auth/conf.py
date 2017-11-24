@@ -1,7 +1,12 @@
 # This file contains the default configuration values
 # and confiuration retrivement functions
 
+import logging
 import os
+
+LOGGER = logging.getLogger('auth.' + __name__)
+LOGGER.addHandler(logging.StreamHandler())
+LOGGER.setLevel(logging.INFO)
 
 # database related configuration
 dbName = os.environ.get("AUTH_DB_NAME", "postgres")
@@ -61,24 +66,28 @@ passwdMinLen = int(os.environ.get("AUTH_PASSWD_MIN_LEN", 8))
 passwdBlackList = os.environ.get("AUTH_PASSWD_BLACKLIST",
                                  "password_blacklist.txt")
 
+
+logMode = os.environ.get("AUTH_SYSLOG", "STDOUT")
+
+
 # make some configuration checks
 # and warn if dangerous configuration is found
 if (emailHost == 'NOEMAIL'):
-    print("Warning: MAIL_HOST set to NOEMAIL. This is unsafe"
-          " and there's no way to reset users forgotten password")
+    LOGGER.warning("MAIL_HOST set to NOEMAIL. This is unsafe"
+                   " and there's no way to reset users forgotten password")
 
 if (emailHost != 'NOEMAIL' and
    (len(emailUsername) == 0 or len(emailPasswd) == 0)):
-    print('Invalid configuration: No EMAIL_USER or EMAIL_PASSWD defined'
-          ' although a EMAIL_HOST was defined')
+    LOGGER.warning('Invalid configuration: No EMAIL_USER or EMAIL_PASSWD'
+                   ' defined although a EMAIL_HOST was defined')
 
 if (emailHost != 'NOEMAIL' and not emailTLS):
-    print('Warning: Using e-mail without TLS is not safe')
+    LOGGER.warning('Using e-mail without TLS is not safe')
 
 if (kongURL == 'DISABLED' and not checkJWTSign):
-    print('Warning: Disabling KONG_URL and TOKEN_CHECK_SIGN is dangerous, as'
-          ' auth has no way to guarantee a JWT token is valid')
+    LOGGER.warning('Disabling KONG_URL and TOKEN_CHECK_SIGN is dangerous, as'
+                   ' auth has no way to guarantee a JWT token is valid')
 
 if (passwdMinLen < 6):
-    print("Password minlen can't be less than 6.")
+    LOGGER.warning("Password minlen can't be less than 6.")
     passwdMinLen = 6
