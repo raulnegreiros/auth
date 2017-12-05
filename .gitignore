@@ -2,3 +2,5 @@
 *.bin
 password_blacklist.txt
 auth/logs
+.eggs
+auth.egg-info

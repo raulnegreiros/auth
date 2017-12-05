@@ -8,7 +8,6 @@
 from flask import Flask
 from flask import request
 import json
-from bson import json_util
 
 import conf
 import controller.CRUDController as crud
@@ -169,9 +168,7 @@ def listPermissions():
             if 'permission' in request.args else None
         )
         permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({
-                                        "permissions": permissionsSafe
-                                        }, default=json_util.default), 200)
+        return make_response(json.dumps({"permissions": permissionsSafe}), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -180,8 +177,7 @@ def listPermissions():
 def getPermission(permid):
     try:
         perm = crud.getPerm(db.session, permid)
-        return make_response(json.dumps(perm.safeDict(),
-                             default=json_util.default), 200)
+        return make_response(json.dumps(perm.safeDict()), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
