@@ -177,8 +177,8 @@ def deleteUser(dbSession, user, requester):
 def checkPerm(perm):
     if 'name' not in perm.keys() or len(perm['name']) == 0:
         raise HTTPRequestError(400, "Missing permission name")
-    if len(perm['path']) > PermissionLimits.name:
-        raise HTTPRequestError(400, "Name too long")
+    if len(perm['path']) > PermissionLimits.path:
+        raise HTTPRequestError(400, "Path too long")
     if re.match(r'^[a-z]+[a-z0-9_]', perm['name']) is None:
         raise HTTPRequestError(400,
                                'Invalid name. permission names should start'

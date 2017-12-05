@@ -22,6 +22,7 @@ from database.flaskAlchemyInit import app, db, formatResponse, \
 from database.Models import MVUserPermission, MVGroupPermission
 import database.Cache as cache
 
+from utils.serialization import json_serial
 
 # Authenticion endpoint
 @app.route('/', methods=['POST'])
@@ -168,7 +169,7 @@ def listPermissions():
             if 'permission' in request.args else None
         )
         permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}), 200)
+        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -177,7 +178,7 @@ def listPermissions():
 def getPermission(permid):
     try:
         perm = crud.getPerm(db.session, permid)
-        return make_response(json.dumps(perm.safeDict()), 200)
+        return make_response(json.dumps(perm.safeDict(),default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
