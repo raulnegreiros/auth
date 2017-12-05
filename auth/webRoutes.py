@@ -71,7 +71,7 @@ def createUser():
                                         "groups": groupSuccess,
                                         "could not add": groupFailed,
                                         "message": "user created"
-                                        }), 200)
+                                        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -85,7 +85,7 @@ def listUsers():
             request.args['username'] if 'username' in request.args else None
         )
         usersSafe = list(map(lambda u: u.safeDict(), users))
-        return make_response(json.dumps({"users": usersSafe}), 200)
+        return make_response(json.dumps({"users": usersSafe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -94,7 +94,7 @@ def listUsers():
 def getUser(user):
     try:
         user = crud.getUser(db.session, user)
-        return make_response(json.dumps({"user": user.safeDict()}), 200)
+        return make_response(json.dumps({"user": user.safeDict()}, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -151,7 +151,7 @@ def createPermission():
         return make_response(json.dumps({
                                         "status": 200,
                                         "id": newPerm.id
-                                        }), 200)
+                                        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -221,7 +221,7 @@ def createGroup():
         return make_response(json.dumps({
                                         "status": 200,
                                         "id": newGroup.id
-                                        }), 200)
+                                        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -238,7 +238,7 @@ def listGroup():
         groupsSafe = list(map(lambda p: p.safeDict(), groups))
         for g in groupsSafe:
             g['created_date'] = g['created_date'].isoformat()
-        return make_response(json.dumps({"groups": groupsSafe}), 200)
+        return make_response(json.dumps({"groups": groupsSafe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -249,7 +249,7 @@ def getGroup(group):
         group = crud.getGroup(db.session, group)
         group = group.safeDict()
         group['created_date'] = group['created_date'].isoformat()
-        return make_response(json.dumps(group), 200)
+        return make_response(json.dumps(group, default=json_serial), 200)
     except HTTPRequestError as err:
         return formatResponse(err.errorCode, err.message)
 
@@ -337,7 +337,7 @@ def pdpRequest():
         return make_response(json.dumps({
                                         "decision": veredict,
                                         "status": "ok"
-                                        }), 200)
+                                        }, default=json_serial), 200)
 
 
 #  Reports endpoints
@@ -349,9 +349,7 @@ def getUserDirectPermissions(user):
         return formatResponse(err.errorCode, err.message)
     else:
         permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({
-                                        "permissions": permissionsSafe
-                                        }), 200)
+        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
 
 
 @app.route('/pap/user/<user>/allpermissions', methods=['GET'])
@@ -373,7 +371,7 @@ def getUserGrups(user):
         return formatResponse(err.errorCode, err.message)
     else:
         groupsSafe = list(map(lambda p: p.safeDict(), groups))
-        return make_response(json.dumps({"groups": groupsSafe}), 200)
+        return make_response(json.dumps({"groups": groupsSafe}, default=json_serial), 200)
 
 
 @app.route('/pap/group/<group>/permissions', methods=['GET'])
@@ -384,7 +382,7 @@ def getGroupPermissions(group):
         return formatResponse(err.errorCode, err.message)
     else:
         permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}), 200)
+        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
 
 
 @app.route('/pap/group/<group>/users', methods=['GET'])
@@ -395,7 +393,7 @@ def getGroupUsers(group):
         return formatResponse(err.errorCode, err.message)
     else:
         usersSafe = list(map(lambda p: p.safeDict(), users))
-        return make_response(json.dumps({"users": usersSafe}), 200)
+        return make_response(json.dumps({"users": usersSafe}, default=json_serial), 200)
 
 
 # passwd related endpoints
