@@ -362,9 +362,7 @@ def getAllUserPermissions(user):
         return formatResponse(err.errorCode, err.message)
     else:
         permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({
-                                        "permissions": permissionsSafe
-                                        }), 200)
+        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
 
 
 @app.route('/pap/user/<user>/groups', methods=['GET'])
