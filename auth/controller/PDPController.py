@@ -32,7 +32,7 @@ def pdpMain(dbSession, pdpRequest):
                                   pdpRequest['resource'])
     # Return the cached answer if it exist
     if cachedVeredict:
-        log().info('user ' + user_id + ' '
+        log().info('user ' + str(user_id) + ' '
                    + cachedVeredict + ' to ' + pdpRequest['action']
                    + ' on ' + pdpRequest['resource'])
         return cachedVeredict
@@ -47,7 +47,7 @@ def pdpMain(dbSession, pdpRequest):
                  pdpRequest['resource'],
                  veredict)
 
-    log.info('user ' + user_id + ' '
+    log().info('user ' + str(user_id) + ' '
              + veredict + ' to ' + pdpRequest['action']
              + ' on ' + pdpRequest['resource'])
     return veredict
