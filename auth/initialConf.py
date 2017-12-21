@@ -106,7 +106,9 @@ def createPermissions():
                 permissionDictHelper('all_user', "/auth/user/(.*)", "(.*)"),
                 permissionDictHelper('ro_user', "/auth/user/(.*)", "GET"),
                 permissionDictHelper('all_pap', "/pap/(.*)", "(.*)"),
-                permissionDictHelper('ro_pap', "/pap/(.*)", "GET")
+                permissionDictHelper('ro_pap', "/pap/(.*)", "GET"),
+                permissionDictHelper('ro_ca', "/ca/(.*)", "GET"),
+                permissionDictHelper('wo_sign', "/sign/(.*)", "POST")
                 ]
 
     for p in predefPerms:
@@ -146,7 +148,9 @@ def addPermissionsGroup():
                     'all_metric',
                     'all_mashup',
                     'all_user',
-                    'all_pap'
+                    'all_pap',
+                    'ro_ca',
+                    'wo_sign'
             ]
         },
         {
@@ -157,7 +161,9 @@ def addPermissionsGroup():
                     'all_flows',
                     'all_history',
                     'all_metric',
-                    'all_mashup'
+                    'all_mashup',
+                    'ro_ca',
+                    'wo_sign'
             ]
         }
     ]
