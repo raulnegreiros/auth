@@ -189,3 +189,22 @@ Retrieves all information from users matching the term passed by URL parameter '
     "message": "No users matching the criteria were found",
     "status": 404
   }
+
+
+## List tenant services [/admin/tenants]
+List all known tenants in dojot
+
+This is an internal call used for debugging, and for service initialization procedure. Hence only
+calls issued from within the platform will be accepted.
+
+### List tenants [GET]
+List all tenants currently configured in dojot
+
++ Response 200 (application/json)
+
+            {
+              "tenants": [
+                "admin",
+                "test"
+              ]
+            }
