@@ -1,0 +1,20 @@
+language: python
+
+before_script:
+  - npm install -g aglio
+
+script:
+  - cd docs
+  - aglio -i ./auth.apib -o auth.html
+  - aglio -i ./crud-api.apib -o crud-api.html
+  - aglio -i ./relation.apib -o relation.html
+  - aglio -i ./report.apib -o report.html
+
+deploy:
+  local_dir: ${TRAVIS_BUILD_DIR}/docs
+  target_branch: gh-pages
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  on:
+    branch: master
