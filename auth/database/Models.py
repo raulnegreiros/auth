@@ -1,3 +1,4 @@
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
 from sqlalchemy import ForeignKey, Enum, PrimaryKeyConstraint
@@ -12,6 +13,8 @@ from .inputConf import UserLimits, PermissionLimits, GroupLimits
 from .flaskAlchemyInit import app, db
 from .materialized_view_factory import create_mat_view
 from .materialized_view_factory import refresh_mat_view
+
+from database.flaskAlchemyInit import HTTPRequestError
 
 
 class PermissionEnum(enum.Enum):
@@ -84,9 +87,13 @@ class User(db.Model):
 
     def getByNameOrID(nameOrId):
         try:
-            return db.session.query(User).filter_by(id=int(nameOrId)).one()
-        except ValueError:
-            return db.session.query(User).filter_by(username=nameOrId).one()
+            try:
+                integerid = int(nameOrId)
+                return db.session.query(User).filter_by(id=integerid).one()
+            except ValueError:
+                return db.session.query(User).filter_by(username=nameOrId).one()
+        except NoResultFound:
+            raise HTTPRequestError(404, "Unknown user id")
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(UserLimits.name), nullable=False)
