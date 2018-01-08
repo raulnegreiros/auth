@@ -292,8 +292,7 @@ def addUserToGroup(user, group):
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/grouppermissions/<group>/<permission>',
-           methods=['POST', 'DELETE'])
+@app.route('/pap/grouppermissions/<group>/<permission>', methods=['POST', 'DELETE'])
 def addGroupPermission(group, permission):
     try:
         requester = auth.getJwtPayload(request.headers.get('Authorization'))
@@ -309,8 +308,7 @@ def addGroupPermission(group, permission):
         return formatResponse(err.errorCode, err.message)
 
 
-@app.route('/pap/userpermissions/<user>/<permission>',
-           methods=['POST', 'DELETE'])
+@app.route('/pap/userpermissions/<user>/<permission>', methods=['POST', 'DELETE'])
 def addUserPermission(user, permission):
     try:
         requester = auth.getJwtPayload(request.headers.get('Authorization'))
@@ -456,6 +454,15 @@ def dropCache():
     cache.deleteKey()
     return formatResponse(200)
 
+@app.route('/admin/tenants', methods=['GET'])
+def list_tenants():
+    """Returns a list containing all existing tenants in the system"""
+
+    try:
+        tenants = crud.list_tenants(db.session)
+        return make_response(json.dumps({"tenants": tenants}), 200)
+    except HTTPRequestError as err:
+        return formatResponse(err.errorCode, err.message)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)
