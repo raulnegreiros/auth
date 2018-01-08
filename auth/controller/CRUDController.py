@@ -386,3 +386,12 @@ def deleteGroup(dbSession, group, requester):
         dbSession.delete(group)
     except sqlalchemy.orm.exc.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")
+
+def list_tenants(dbSession):
+    try:
+        tenants = []
+        for tenant in dbSession.query(User.service).distinct():
+            tenants.append(tenant[0])
+        return tenants
+    except sqlalchemy.orm.exc.NoResultFound:
+        raise HTTPRequestError(404, "No registered tenants found")
