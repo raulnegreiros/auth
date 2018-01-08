@@ -5,7 +5,9 @@ FORMAT: 1A
 Endpoints to perform user and session management
 
 # Group Auth
+
 ## Session management [/]
+
 ### Create session [POST]
 Authenticate with the system, returning a session token to be used with API
 
@@ -53,7 +55,9 @@ Authenticate with the system, returning a session token to be used with API
 
 
 ## Known users manipulation [/user]
+
 ### List known users [GET]
+
 Lists all users known to the platform
 + Request
     + Headers
@@ -140,7 +144,6 @@ Service is the token that associates the user with the set of devices and flows 
 
 ## Individual user settings [/user/{id}]
 Access a user's authorization and identification information
-
 + parameters
   + id: 1 (required, string) - The user ID
 
