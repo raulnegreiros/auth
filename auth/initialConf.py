@@ -14,7 +14,7 @@ from database.Models import MVUserPermission, MVGroupPermission
 import kongUtils as kong
 
 
-def createUsers():
+def create_users():
     predefusers = [
         {
             "name": "Admin (superuser)",
@@ -29,10 +29,10 @@ def createUsers():
     for user in predefusers:
         # check if the user already exist
         # if the user exist, chances are this scrip has been run before
-        anotherUser = db.session.query(User.id) \
+        another_user = db.session.query(User.id) \
                                 .filter_by(username=user['username']) \
                                 .one_or_none()
-        if anotherUser:
+        if another_user:
             print("That not the first container run. Skipping")
             exit(0)
         # mark the user as automatically created
@@ -44,22 +44,22 @@ def createUsers():
                              user['salt'],
                              1000).split('$').pop()
         del user['passwd']
-        newUser = User(**user)
+        new_user = User(**user)
 
         # configure kong shared secret
-        kongData = kong.configureKong(newUser.username)
-        if kongData is None:
+        kong_data = kong.configureKong(new_user.username)
+        if kong_data is None:
             print('failed to configure verification subsystem')
             exit(-1)
-        newUser.secret = kongData['secret']
-        newUser.key = kongData['key']
-        newUser.kongId = kongData['kongid']
-        db.session.add(newUser)
+        new_user.secret = kong_data['secret']
+        new_user.key = kong_data['key']
+        new_user.kongId = kong_data['kongid']
+        db.session.add(new_user)
     db.session.commit()
 
 
-def createGroups():
-    predefGroups = [
+def create_groups():
+    predef_groups = [
         {
             "name": "admin",
             "description": "Group with the highest access privilege"
@@ -69,7 +69,7 @@ def createGroups():
             "description": "This groups can do anything, except manage users"
         }
     ]
-    for g in predefGroups:
+    for g in predef_groups:
         # mark the group as automatically created
         g['created_by'] = 0
         group = Group(**g)
@@ -79,7 +79,7 @@ def createGroups():
 
 # A utility function to create a permission dict
 # so the List 'predefPerms' get less verbose
-def permissionDictHelper(name, path, method, permission=PermissionEnum.permit):
+def permission_dict_helper(name, path, method, permission=PermissionEnum.permit):
     return {
         "name": name,
         "path":  path,
@@ -89,90 +89,84 @@ def permissionDictHelper(name, path, method, permission=PermissionEnum.permit):
     }
 
 
-def createPermissions():
-    predefPerms = [
-                permissionDictHelper('all_template', "/template/(.*)", "(.*)"),
-                permissionDictHelper('ro_template', "/template/(.*)", "GET"),
-                permissionDictHelper('all_device', "/device/(.*)", "(.*)"),
-                permissionDictHelper('ro_device', "/device/(.*)", "GET"),
-                permissionDictHelper('all_flows', "/flows/(.*)", "(.*)"),
-                permissionDictHelper('ro_flows', "/flows/(.*)", "GET"),
-                permissionDictHelper('all_history', "/history/(.*)", "(.*)"),
-                permissionDictHelper('ro_history', "/history/(.*)", "GET"),
-                permissionDictHelper('all_metric', "/metric/(.*)", "(.*)"),
-                permissionDictHelper('ro_metric', "/metric/(.*)", "GET"),
-                permissionDictHelper('all_mashup', "/mashup/(.*)", "(.*)"),
-                permissionDictHelper('ro_mashup', "/mashup/(.*)", "GET"),
-                permissionDictHelper('all_user', "/auth/user/(.*)", "(.*)"),
-                permissionDictHelper('ro_user', "/auth/user/(.*)", "GET"),
-                permissionDictHelper('all_pap', "/pap/(.*)", "(.*)"),
-                permissionDictHelper('ro_pap', "/pap/(.*)", "GET"),
-                permissionDictHelper('ro_ca', "/ca/(.*)", "GET"),
-                permissionDictHelper('wo_sign', "/sign/(.*)", "POST")
-                ]
+def create_permissions():
+    predef_perms = [
+        permission_dict_helper('all_all', "/(.*)", "(.*)"),
+        permission_dict_helper('all_template', "/template/(.*)", "(.*)"),
+        permission_dict_helper('ro_template', "/template/(.*)", "GET"),
+        permission_dict_helper('all_device', "/device/(.*)", "(.*)"),
+        permission_dict_helper('ro_device', "/device/(.*)", "GET"),
+        permission_dict_helper('all_flows', "/flows/(.*)", "(.*)"),
+        permission_dict_helper('ro_flows', "/flows/(.*)", "GET"),
+        permission_dict_helper('all_history', "/history/(.*)", "(.*)"),
+        permission_dict_helper('ro_history', "/history/(.*)", "GET"),
+        permission_dict_helper('all_metric', "/metric/(.*)", "(.*)"),
+        permission_dict_helper('ro_metric', "/metric/(.*)", "GET"),
+        permission_dict_helper('all_mashup', "/mashup/(.*)", "(.*)"),
+        permission_dict_helper('ro_mashup', "/mashup/(.*)", "GET"),
+        permission_dict_helper('all_user', "/auth/user/(.*)", "(.*)"),
+        permission_dict_helper('ro_user', "/auth/user/(.*)", "GET"),
+        permission_dict_helper('all_pap', "/pap/(.*)", "(.*)"),
+        permission_dict_helper('ro_pap', "/pap/(.*)", "GET"),
+        permission_dict_helper('ro_ca', "/ca/(.*)", "GET"),
+        permission_dict_helper('wo_sign', "/sign/(.*)", "POST"),
+        permission_dict_helper('ro_alarms', "/alarmmanager/(.*)", "GET")
+    ]
 
-    for p in predefPerms:
+    for p in predef_perms:
         perm = Permission(**p)
         db.session.add(perm)
     db.session.commit()
 
 
-def addUserGroups():
-    predefUserGroup = [
+def add_user_groups():
+    predef_user_group = [
         {
             "name": "admin",
             "groups": ["admin"]
         },
     ]
 
-    for u in predefUserGroup:
-        userId = User.getByNameOrID(u['name']).id
+    for u in predef_user_group:
+        user_id = User.getByNameOrID(u['name']).id
         for groupName in u['groups']:
             r = UserGroup(
-                            user_id=userId,
+                            user_id=user_id,
                             group_id=Group.getByNameOrID(groupName).id
                         )
             db.session.add(r)
     db.session.commit()
 
 
-def addPermissionsGroup():
-    predefGroupPerm = [
+def add_permissions_group():
+    predef_group_perm = [
         {
             "name": "admin",
             "permission": [
-                    'all_template',
-                    'all_device',
-                    'all_flows',
-                    'all_history',
-                    'all_metric',
-                    'all_mashup',
-                    'all_user',
-                    'all_pap',
-                    'ro_ca',
-                    'wo_sign'
+                'all_all'
             ]
         },
         {
             "name": "user",
             "permission": [
-                    'all_template',
-                    'all_device',
-                    'all_flows',
-                    'all_history',
-                    'all_metric',
-                    'all_mashup',
-                    'ro_ca',
-                    'wo_sign'
+                'all_template',
+                'all_device',
+                'all_flows',
+                'all_history',
+                'all_metric',
+                'all_mashup',
+                'ro_alarms',
+                'ro_ca',
+                'wo_sign'
             ]
         }
     ]
 
-    for g in predefGroupPerm:
-        groupId = Group.getByNameOrID(g['name']).id
+    for g in predef_group_perm:
+        group_id = Group.getByNameOrID(g['name']).id
         for perm in g['permission']:
-            permId = Permission.getByNameOrID(perm).id
-            r = GroupPermission(group_id=groupId, permission_id=permId)
+            perm_id = Permission.getByNameOrID(perm).id
+            r = GroupPermission(group_id=group_id, permission_id=perm_id)
             db.session.add(r)
 
     db.session.commit()
@@ -181,11 +175,11 @@ def addPermissionsGroup():
 def populate():
     print("Creating initial user and permission...")
     try:
-        createUsers()
-        createGroups()
-        createPermissions()
-        addPermissionsGroup()
-        addUserGroups()
+        create_users()
+        create_groups()
+        create_permissions()
+        add_permissions_group()
+        add_user_groups()
     except sqlalchemy.exc.DBAPIError as e:
         print("Could not connect to the database.")
         print(e)

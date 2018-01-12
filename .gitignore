@@ -3,3 +3,4 @@
 auth/logs
 .eggs
 auth.egg-info
+.idea/
