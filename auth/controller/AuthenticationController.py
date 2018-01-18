@@ -1,40 +1,42 @@
-# this file contains function to check user credentials
+# this file contains functions to check user credentials
 # and generate a JWT token
 import time
 import binascii
 import jwt
-import sqlalchemy
-from pbkdf2 import crypt
 import os
+
+from pbkdf2 import crypt
+from sqlalchemy.orm import exc as orm_exceptions
+from sqlalchemy import exc as sqlalchemy_exceptions
+
+import conf
 
 from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
-import conf
 from database.flaskAlchemyInit import log
-import sqlalchemy
 
 
-def authenticate(dbSession, authData):
-    if 'username' not in authData.keys():
+def authenticate(db_session, auth_data):
+    if 'username' not in auth_data.keys():
         raise HTTPRequestError(400, 'missing username')
-    if 'passwd' not in authData.keys():
-        raise HTTPRequestError(400, 'missing passwd')
+    if 'passwd' not in auth_data.keys():
+        raise HTTPRequestError(400, 'missing password')
 
-    username = authData['username']
-    passwd = authData['passwd']
+    username = auth_data['username']
+    passwd = auth_data['passwd']
 
     try:
-        user = dbSession.query(User).filter_by(username=username.lower()).one()
-    except sqlalchemy.orm.exc.NoResultFound:
+        user = db_session.query(User).filter_by(username=username.lower()).one()
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(401, 'not authorized')
-    except sqlalchemy.exc.DBAPIError:
+    except sqlalchemy_exceptions.DBAPIError:
         raise HTTPRequestError(500, 'Problem connecting to database')
 
     if not user.hash:
         raise HTTPRequestError(401, 'This user is inactive')
 
     if user.hash == crypt(passwd, user.salt, 1000).split('$').pop():
-        groupsId = [g.id for g in user.groups]
+        groups_id = [g.id for g in user.groups]
 
         claims = {
             'iss': user.key,
@@ -43,7 +45,7 @@ def authenticate(dbSession, authData):
             'name': user.name,
             'email': user.email,
             'profile': user.profile,  # Obsolete. Kept for compatibility
-            'groups': groupsId,
+            'groups': groups_id,
             'userid': user.id,
 
             # Generate a random string as nonce
@@ -59,46 +61,32 @@ def authenticate(dbSession, authData):
 
 
 # this helper function receive a base64 JWT token
-# the function decodes the JWT, check the signature (if configured to check)
+# the function decodes the JWT, checks the signature (if configured to check)
 # and returns the jwt payload as a python dictionary
-def getJwtPayload(rawJWT):
-    if not rawJWT:
+def get_jwt_payload(raw_jwt):
+    if not raw_jwt:
         raise HTTPRequestError(401, "not authorized")
 
     # remove the bearer of the token
-    splittedToken = rawJWT.split(' ')
-    if len(splittedToken) > 1:
-        rawJWT = splittedToken[1]
+    split_token = raw_jwt.split(' ')
+    if len(split_token) > 1:
+        raw_jwt = split_token[1]
 
     try:
-        jwtPayload = jwt.decode(rawJWT, verify=False)
+        jwt_payload = jwt.decode(raw_jwt, verify=False)
     except jwt.exceptions.DecodeError:
         raise HTTPRequestError(401, "Corrupted JWT")
 
-    try:
-        user_id = jwtPayload['userid']
-    except KeyError:
+    if jwt_payload.get('userid', None) is None:
         raise HTTPRequestError(401, "Invalid JWT payload")
 
-    # now that we know the user, we know the secret
-    # and can check the jwt signature
-    if conf.checkJWTSign:
-        try:
-            user = dbSession.query(User). \
-                    filter_by(user_id=jwtPayload['userid']).one()
-            options = {
-                'verify_exp': False,
-            }
-            jwt.decode(rawJWT,
-                       user.secret, algorithm='HS256', options=options)
-        except (jwt.exceptions.DecodeError, sqlalchemy.orm.exc.NoResultFound):
-            raise HTTPRequestError(401, "Invalid JWT signaure")
-        except sqlalchemy.exc.DBAPIError:
-            raise HTTPRequestError(500, 'Problem connecting to database')
-    return jwtPayload
+    # TODO: Change signature verification for a public/private key schema
+    # TODO: where Auth has the private key for signing tokens.
+
+    return jwt_payload
 
 
-def userIdFromJWT(token):
+def user_id_from_jwt(token):
     if not token:
         raise HTTPRequestError(401, "not authorized")
-    return getJwtPayload(token)['userid']
+    return get_jwt_payload(token)['userid']

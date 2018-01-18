@@ -5,7 +5,7 @@ import conf
 from database.Models import Permission, User, Group, PermissionEnum
 from database.Models import MVUserPermission, MVGroupPermission
 from database.flaskAlchemyInit import HTTPRequestError, app
-from controller.AuthenticationController import getJwtPayload
+from controller.AuthenticationController import get_jwt_payload
 import database.Cache as cache
 from database.flaskAlchemyInit import log
 
@@ -24,12 +24,12 @@ def checkRequest(pdpRequest):
 
 def pdpMain(dbSession, pdpRequest):
     checkRequest(pdpRequest)
-    jwtPayload = getJwtPayload(pdpRequest['jwt'])
+    jwtPayload = get_jwt_payload(pdpRequest['jwt'])
     user_id = jwtPayload['userid']
 
     # try to retrieve the veredict from cache
-    cachedVeredict = cache.getKey(user_id, pdpRequest['action'],
-                                  pdpRequest['resource'])
+    cachedVeredict = cache.get_key(user_id, pdpRequest['action'],
+                                   pdpRequest['resource'])
     # Return the cached answer if it exist
     if cachedVeredict:
         log().info('user ' + str(user_id) + ' '
@@ -42,10 +42,10 @@ def pdpMain(dbSession, pdpRequest):
                                   pdpRequest['action'],
                                   pdpRequest['resource'])
     # Registry this veredict on cache
-    cache.setKey(user_id,
-                 pdpRequest['action'],
-                 pdpRequest['resource'],
-                 veredict)
+    cache.set_key(user_id,
+                  pdpRequest['action'],
+                  pdpRequest['resource'],
+                  veredict)
 
     log().info('user ' + str(user_id) + ' '
              + veredict + ' to ' + pdpRequest['action']

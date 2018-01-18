@@ -13,7 +13,7 @@ from marisa_trie import Trie
 from database.flaskAlchemyInit import HTTPRequestError
 from database.historicModels import PasswdInactive, PasswordRequestInactive
 from database.Models import PasswordRequest, User
-from utils.emailUtils import sendMail
+from utils.emailUtils import send_mail
 import conf
 
 LOGGER = logging.getLogger('auth.' + __name__)
@@ -237,7 +237,7 @@ def createPasswordResetRequest(dbSession, username):
         html = f.read()
     resetLink = conf.resetPwdView + '?link=' + requestDict['link']
     html = html.format(name=user.name, link=resetLink)
-    sendMail(user.email, 'Password Reset', html)
+    send_mail(user.email, 'Password Reset', html)
 
 
 def createPasswordSetRequest(dbSession, user):
@@ -256,7 +256,7 @@ def createPasswordSetRequest(dbSession, user):
     html = html.format(name=user.name,
                        link=resetLink,
                        username=user.username)
-    sendMail(user.email, 'Account Activation', html)
+    send_mail(user.email, 'Account Activation', html)
 
 
 # force expiration of one user passwords reset request

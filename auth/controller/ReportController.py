@@ -1,5 +1,5 @@
-# this file contains usefull functions for
-# easily get information about permissions, groups and user
+# this file contains useful functions for
+# getting information about permissions, groups and users
 import sqlalchemy
 
 from database.Models import Permission, User, Group, PermissionEnum

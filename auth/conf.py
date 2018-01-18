@@ -1,5 +1,5 @@
 # This file contains the default configuration values
-# and confiuration retrivement functions
+# and configuration retrieval functions
 
 import logging
 import os
@@ -29,11 +29,6 @@ kongURL = os.environ.get("AUTH_KONG_URL", "http://kong:8001")
 
 # JWT token related configuration
 tokenExpiration = int(os.environ.get("AUTH_TOKEN_EXP", 420))
-
-# if auth should verify JWT signatures. Ative this will cause one
-# query of overhead.
-checkJWTSign = (os.environ.get("AUTH_TOKEN_CHECK_SIGN", "FALSE") in
-                ['true', 'True', 'TRUE'])
 
 # email related configuration
 emailHost = os.environ.get("AUTH_EMAIL_HOST", "NOEMAIL")
@@ -72,22 +67,17 @@ logMode = os.environ.get("AUTH_SYSLOG", "STDOUT")
 
 # make some configuration checks
 # and warn if dangerous configuration is found
-if (emailHost == 'NOEMAIL'):
+if emailHost == 'NOEMAIL':
     LOGGER.warning("MAIL_HOST set to NOEMAIL. This is unsafe"
                    " and there's no way to reset users forgotten password")
+else:
+    if not emailUsername or not emailPasswd:
+        LOGGER.warning('Invalid configuration: No EMAIL_USER or EMAIL_PASSWD'
+                       ' defined although a EMAIL_HOST was defined')
 
-if (emailHost != 'NOEMAIL' and
-   (len(emailUsername) == 0 or len(emailPasswd) == 0)):
-    LOGGER.warning('Invalid configuration: No EMAIL_USER or EMAIL_PASSWD'
-                   ' defined although a EMAIL_HOST was defined')
+    if not emailTLS:
+        LOGGER.warning('Using e-mail without TLS is not safe')
 
-if (emailHost != 'NOEMAIL' and not emailTLS):
-    LOGGER.warning('Using e-mail without TLS is not safe')
-
-if (kongURL == 'DISABLED' and not checkJWTSign):
-    LOGGER.warning('Disabling KONG_URL and TOKEN_CHECK_SIGN is dangerous, as'
-                   ' auth has no way to guarantee a JWT token is valid')
-
-if (passwdMinLen < 6):
+if passwdMinLen < 6:
     LOGGER.warning("Password minlen can't be less than 6.")
     passwdMinLen = 6

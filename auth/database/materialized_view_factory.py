@@ -61,5 +61,5 @@ class MaterializedView(db.Model):
 
     @classmethod
     def refresh(cls, concurrently=True):
-        '''Refreshes the current materialized view'''
+        """Refreshes the current materialized view"""
         refresh_mat_view(cls.__table__.fullname, concurrently)

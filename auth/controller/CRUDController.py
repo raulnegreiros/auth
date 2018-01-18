@@ -155,7 +155,7 @@ def deleteUser(dbSession, user, requester):
         dbSession.execute(
             UserGroup.__table__.delete(UserGroup.user_id == user.id)
         )
-        cache.deleteKey(userid=user.id)
+        cache.delete_key(userid=user.id)
 
         # The user is not hardDeleted.
         # it should be copied to inactiveUser table
@@ -289,7 +289,7 @@ def deletePerm(dbSession, permission, requester):
             GroupPermission.__table__
             .delete(GroupPermission.permission_id == perm.id)
         )
-        cache.deleteKey(action=perm.method, resource=perm.path)
+        cache.delete_key(action=perm.method, resource=perm.path)
         log().info('permission ' + str(perm.name) + ' deleted by '
                    + requester['username'],
                    perm.safeDict())
@@ -379,7 +379,7 @@ def deleteGroup(dbSession, group, requester):
             UserGroup.__table__
             .delete(UserGroup.group_id == group.id)
         )
-        cache.deleteKey()
+        cache.delete_key()
         log().info('group ' + group.name + ' deleted by '
                    + requester['username'],
                    group.safeDict())

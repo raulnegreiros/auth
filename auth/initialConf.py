@@ -4,7 +4,8 @@
 import binascii
 import os
 from pbkdf2 import crypt
-import sqlalchemy
+
+from sqlalchemy import exc as sqlalchemy_exceptions
 
 from database.flaskAlchemyInit import db
 from database.Models import Permission, User, Group, PermissionEnum
@@ -15,7 +16,7 @@ import kongUtils as kong
 
 
 def create_users():
-    predefusers = [
+    predef_users = [
         {
             "name": "Admin (superuser)",
             "username": "admin",
@@ -26,14 +27,14 @@ def create_users():
         }
     ]
 
-    for user in predefusers:
-        # check if the user already exist
+    for user in predef_users:
+        # check if the user already exists
         # if the user exist, chances are this scrip has been run before
         another_user = db.session.query(User.id) \
                                 .filter_by(username=user['username']) \
                                 .one_or_none()
         if another_user:
-            print("That not the first container run. Skipping")
+            print("This is not the first container run. Skipping")
             exit(0)
         # mark the user as automatically created
         user['created_by'] = 0
@@ -47,7 +48,7 @@ def create_users():
         new_user = User(**user)
 
         # configure kong shared secret
-        kong_data = kong.configureKong(new_user.username)
+        kong_data = kong.configure_kong(new_user.username)
         if kong_data is None:
             print('failed to configure verification subsystem')
             exit(-1)
@@ -127,13 +128,11 @@ def add_user_groups():
         },
     ]
 
-    for u in predef_user_group:
-        user_id = User.getByNameOrID(u['name']).id
-        for groupName in u['groups']:
-            r = UserGroup(
-                            user_id=user_id,
-                            group_id=Group.getByNameOrID(groupName).id
-                        )
+    for user in predef_user_group:
+        user_id = User.getByNameOrID(user['name']).id
+        for group_name in user['groups']:
+            r = UserGroup(user_id=user_id,
+                          group_id=Group.getByNameOrID(group_name).id)
             db.session.add(r)
     db.session.commit()
 
@@ -162,9 +161,9 @@ def add_permissions_group():
         }
     ]
 
-    for g in predef_group_perm:
-        group_id = Group.getByNameOrID(g['name']).id
-        for perm in g['permission']:
+    for group in predef_group_perm:
+        group_id = Group.getByNameOrID(group['name']).id
+        for perm in group['permission']:
             perm_id = Permission.getByNameOrID(perm).id
             r = GroupPermission(group_id=group_id, permission_id=perm_id)
             db.session.add(r)
@@ -180,9 +179,9 @@ def populate():
         create_permissions()
         add_permissions_group()
         add_user_groups()
-    except sqlalchemy.exc.DBAPIError as e:
+    except sqlalchemy_exceptions.DBAPIError as err:
         print("Could not connect to the database.")
-        print(e)
+        print(err)
         exit(-1)
 
     # refresh views

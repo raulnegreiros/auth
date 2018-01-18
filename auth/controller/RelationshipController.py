@@ -25,7 +25,7 @@ def addUserGroup(dbSession, user, group, requester):
 
     r = UserGroup(user_id=user.id, group_id=group.id)
     dbSession.add(r)
-    cache.deleteKey(userid=user.id)
+    cache.delete_key(userid=user.id)
     log().info('user ' + user.username + ' added to group ' + group.name
                + ' by ' + requester['username'])
 
@@ -43,7 +43,7 @@ def removeUserGroup(dbSession, user, group, requester):
         relation = dbSession.query(UserGroup) \
             .filter_by(user_id=user.id, group_id=group.id).one()
         dbSession.delete(relation)
-        cache.deleteKey(userid=user.id)
+        cache.delete_key(userid=user.id)
         log().info('user ' + user.username + ' removed from ' + group.name
                    + ' by ' + requester['username'])
     except sqlalchemy.orm.exc.NoResultFound:
@@ -84,8 +84,8 @@ def addGroupPermission(dbSession, group, permission, requester):
 
     r = GroupPermission(group_id=group.id, permission_id=perm.id)
     dbSession.add(r)
-    cache.deleteKey(action=perm.method,
-                    resource=perm.path)
+    cache.delete_key(action=perm.method,
+                     resource=perm.path)
     log().info('permission ' + perm.name + ' added to group ' + group.name
                + ' by ' + requester['username'])
 
@@ -103,8 +103,8 @@ def removeGroupPermission(dbSession, group, permission, requester):
         relation = dbSession.query(GroupPermission) \
             .filter_by(group_id=group.id, permission_id=perm.id).one()
         dbSession.delete(relation)
-        cache.deleteKey(action=perm.method,
-                        resource=perm.path)
+        cache.delete_key(action=perm.method,
+                         resource=perm.path)
         log().info('permission ' + perm.name + ' removed from '
                    ' group ' + group.name + ' by ' + requester['username'])
     except sqlalchemy.orm.exc.NoResultFound:
@@ -127,9 +127,9 @@ def addUserPermission(dbSession, user, permission, requester):
 
     r = UserPermission(user_id=user.id, permission_id=perm.id)
     dbSession.add(r)
-    cache.deleteKey(userid=user.id,
-                    action=perm.method,
-                    resource=perm.path)
+    cache.delete_key(userid=user.id,
+                     action=perm.method,
+                     resource=perm.path)
     log().info('user ' + user.username + ' received permission '
                + perm.name + ' by ' + requester['username'])
 
@@ -147,9 +147,9 @@ def removeUserPermission(dbSession, user, permission, requester):
         relation = dbSession.query(UserPermission) \
             .filter_by(user_id=user.id, permission_id=perm.id).one()
         dbSession.delete(relation)
-        cache.deleteKey(userid=user.id,
-                        action=perm.method,
-                        resource=perm.path)
+        cache.delete_key(userid=user.id,
+                         action=perm.method,
+                         resource=perm.path)
         log().info('user ' + user.username + ' removed permission '
                    + perm.name + ' by ' + requester['username'])
     except sqlalchemy.orm.exc.NoResultFound:
