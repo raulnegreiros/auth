@@ -7,7 +7,7 @@ from requests import ConnectionError
 import conf
 from database.flaskAlchemyInit import HTTPRequestError
 
-LOGGER = logging.getLogger('device-manager.' + __name__)
+LOGGER = logging.getLogger('auth.' + __name__)
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.INFO)
 

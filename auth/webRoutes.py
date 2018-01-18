@@ -5,7 +5,6 @@
 # These functions should be as smaller as possible
 # most of the input validation is done on the controllers
 
-from flask import Flask
 from flask import request
 import json
 
@@ -18,18 +17,19 @@ import controller.ReportController as reports
 import controller.PasswordController as pwdc
 import kongUtils as kong
 from database.flaskAlchemyInit import app, db, format_response, \
-                        HTTPRequestError, make_response, load_json_from_request
+    HTTPRequestError, make_response, load_json_from_request
 from database.Models import MVUserPermission, MVGroupPermission
 import database.Cache as cache
 
 from utils.serialization import json_serial
 
-# Authenticion endpoint
+
+# Authentication endpoint
 @app.route('/', methods=['POST'])
 def authenticate():
     try:
-        authData = load_json_from_request(request)
-        jwt = auth.authenticate(db.session, authData)
+        auth_data = load_json_from_request(request)
+        jwt = auth.authenticate(db.session, auth_data)
         return make_response(json.dumps({'jwt': jwt}), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
@@ -37,86 +37,84 @@ def authenticate():
 
 # User CRUD
 @app.route('/user', methods=['POST'])
-def createUser():
+def create_user():
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        authData = load_json_from_request(request)
+        auth_data = load_json_from_request(request)
 
         # Create user
-        newUser = crud.createUser(db.session, authData, requester)
+        new_user = crud.create_user(db.session, auth_data, requester)
 
         # If no problems occur to create user (no exceptions), configure kong
-        kongData = kong.configure_kong(newUser.username)
-        if kongData is None:
-            return format_response(500,
-                                  'failed to configure verification subsystem')
-        newUser.secret = kongData['secret']
-        newUser.key = kongData['key']
-        newUser.kongId = kongData['kongid']
+        kong_data = kong.configure_kong(new_user.username)
+        if kong_data is None:
+            return format_response(500, 'failed to configure verification subsystem')
+        new_user.secret = kong_data['secret']
+        new_user.key = kong_data['key']
+        new_user.kongId = kong_data['kongid']
 
-        db.session.add(newUser)
+        db.session.add(new_user)
         db.session.commit()
-        groupSuccess = []
-        groupFailed = []
-        if 'profile' in authData.keys():
-            groupSuccess, groupFailed = rship. \
-                addUserManyGroups(db.session, newUser.id,
-                                  authData['profile'], requester)
+        group_success = []
+        group_failed = []
+        if 'profile' in auth_data.keys():
+            group_success, group_failed = rship. \
+                add_user_many_groups(db.session, new_user.id,
+                                     auth_data['profile'], requester)
         db.session.commit()
         if conf.emailHost != 'NOEMAIL':
-            pwdc.createPasswordSetRequest(db.session, newUser)
+            pwdc.create_password_set_request(db.session, new_user)
             db.session.commit()
         return make_response(json.dumps({
-                                        "user": newUser.safeDict(),
-                                        "groups": groupSuccess,
-                                        "could not add": groupFailed,
-                                        "message": "user created"
-                                        }, default=json_serial), 200)
+            "user": new_user.safeDict(),
+            "groups": group_success,
+            "could not add": group_failed,
+            "message": "user created"
+        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/user', methods=['GET'])
-def listUsers():
+def list_users():
     try:
-        users = crud.searchUser(
+        users = crud.search_user(
             db.session,
             # Optional search filters
             request.args['username'] if 'username' in request.args else None
         )
-        usersSafe = list(map(lambda u: u.safeDict(), users))
-        return make_response(json.dumps({"users": usersSafe}, default=json_serial), 200)
+        users_safe = list(map(lambda u: u.safeDict(), users))
+        return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/user/<user>', methods=['GET'])
-def getUser(user):
+def get_user(user):
     try:
-        user = crud.getUser(db.session, user)
+        user = crud.get_user(db.session, user)
         return make_response(json.dumps({"user": user.safeDict()}, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/user/<user>', methods=['PUT'])
-def updateUser(user):
+def update_user(user):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        authData = load_json_from_request(request)
-        oldUser = crud.updateUser(db.session, user, authData, requester)
+        auth_data = load_json_from_request(request)
+        old_user = crud.update_user(db.session, user, auth_data, requester)
 
         # Create a new kong secret and delete the old one
-        kongData = kong.configure_kong(oldUser.username)
-        if kongData is None:
-            return format_response(500,
-                                  'failed to configure verification subsystem')
+        kong_data = kong.configure_kong(old_user.username)
+        if kong_data is None:
+            return format_response(500, 'failed to configure verification subsystem')
 
-        kong.revoke_kong_secret(oldUser.username, oldUser.kongId)
-        oldUser.secret = kongData['secret']
-        oldUser.key = kongData['key']
-        oldUser.kongid = kongData['kongid']
-        db.session.add(oldUser)
+        kong.revoke_kong_secret(old_user.username, old_user.kongId)
+        old_user.secret = kong_data['secret']
+        old_user.key = kong_data['key']
+        old_user.kongid = kong_data['kongid']
+        db.session.add(old_user)
         db.session.commit()
         return format_response(200)
 
@@ -125,12 +123,12 @@ def updateUser(user):
 
 
 @app.route('/user/<user>', methods=['DELETE'])
-def removeUser(user):
+def remove_user(user):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        oldUsername = crud.getUser(db.session, user).username
-        crud.deleteUser(db.session, user, requester)
-        kong.remove_from_kong(oldUsername)
+        old_username = crud.get_user(db.session, user).username
+        crud.delete_user(db.session, user, requester)
+        kong.remove_from_kong(old_username)
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
         db.session.commit()
@@ -141,25 +139,25 @@ def removeUser(user):
 
 # Permission CRUD
 @app.route('/pap/permission', methods=['POST'])
-def createPermission():
+def create_permission():
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        permData = load_json_from_request(request)
-        newPerm = crud.createPerm(db.session, permData, requester)
-        db.session.add(newPerm)
+        perm_data = load_json_from_request(request)
+        new_perm = crud.create_perm(db.session, perm_data, requester)
+        db.session.add(new_perm)
         db.session.commit()
         return make_response(json.dumps({
-                                        "status": 200,
-                                        "id": newPerm.id
-                                        }, default=json_serial), 200)
+            "status": 200,
+            "id": new_perm.id
+        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/permission', methods=['GET'])
-def listPermissions():
+def list_permissions():
     try:
-        permissions = crud.searchPerm(
+        permissions = crud.search_perm(
             db.session,
 
             # search filters
@@ -168,27 +166,27 @@ def listPermissions():
             request.args['permission']
             if 'permission' in request.args else None
         )
-        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
+        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/permission/<permid>', methods=['GET'])
-def getPermission(permid):
+def get_permission(permid):
     try:
-        perm = crud.getPerm(db.session, permid)
-        return make_response(json.dumps(perm.safeDict(),default=json_serial), 200)
+        perm = crud.get_perm(db.session, permid)
+        return make_response(json.dumps(perm.safeDict(), default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/permission/<permid>', methods=['PUT'])
-def updatePermission(permid):
+def update_permission(permid):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        permData = load_json_from_request(request)
-        crud.updatePerm(db.session, permid, permData, requester)
+        perm_data = load_json_from_request(request)
+        crud.update_perm(db.session, permid, perm_data, requester)
         db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
@@ -196,11 +194,11 @@ def updatePermission(permid):
 
 
 @app.route('/pap/permission/<permid>', methods=['DELETE'])
-def deletePermission(permid):
+def delete_permission(permid):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        crud.getPerm(db.session, permid)
-        crud.deletePerm(db.session, permid, requester)
+        crud.get_perm(db.session, permid)
+        crud.delete_perm(db.session, permid, requester)
         db.session.commit()
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
@@ -211,42 +209,42 @@ def deletePermission(permid):
 
 # Group CRUD
 @app.route('/pap/group', methods=['POST'])
-def createGroup():
+def create_group():
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        groupData = load_json_from_request(request)
-        newGroup = crud.createGroup(db.session, groupData, requester)
-        db.session.add(newGroup)
+        group_data = load_json_from_request(request)
+        new_group = crud.create_group(db.session, group_data, requester)
+        db.session.add(new_group)
         db.session.commit()
         return make_response(json.dumps({
-                                        "status": 200,
-                                        "id": newGroup.id
-                                        }, default=json_serial), 200)
+            "status": 200,
+            "id": new_group.id
+        }, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/group', methods=['GET'])
-def listGroup():
+def list_group():
     try:
-        groups = crud.searchGroup(
+        groups = crud.search_group(
             db.session,
 
             # search filters
             request.args['name'] if 'name' in request.args else None
         )
-        groupsSafe = list(map(lambda p: p.safeDict(), groups))
-        for g in groupsSafe:
+        groups_safe = list(map(lambda p: p.safeDict(), groups))
+        for g in groups_safe:
             g['created_date'] = g['created_date'].isoformat()
-        return make_response(json.dumps({"groups": groupsSafe}, default=json_serial), 200)
+        return make_response(json.dumps({"groups": groups_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/group/<group>', methods=['GET'])
-def getGroup(group):
+def get_group(group):
     try:
-        group = crud.getGroup(db.session, group)
+        group = crud.get_group(db.session, group)
         group = group.safeDict()
         group['created_date'] = group['created_date'].isoformat()
         return make_response(json.dumps(group, default=json_serial), 200)
@@ -255,11 +253,11 @@ def getGroup(group):
 
 
 @app.route('/pap/group/<group>', methods=['PUT'])
-def updateGroup(group):
+def update_group(group):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        groupData = load_json_from_request(request)
-        crud.updateGroup(db.session, group, groupData, requester)
+        group_data = load_json_from_request(request)
+        crud.update_group(db.session, group, group_data, requester)
         db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
@@ -267,10 +265,10 @@ def updateGroup(group):
 
 
 @app.route('/pap/group/<group>', methods=['DELETE'])
-def deleteGroup(group):
+def delete_group(group):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        crud.deleteGroup(db.session, group, requester)
+        crud.delete_group(db.session, group, requester)
         MVGroupPermission.refresh()
         db.session.commit()
         return format_response(200)
@@ -279,13 +277,13 @@ def deleteGroup(group):
 
 
 @app.route('/pap/usergroup/<user>/<group>', methods=['POST', 'DELETE'])
-def addUserToGroup(user, group):
+def add_user_to_group(user, group):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         if request.method == 'POST':
-            rship.addUserGroup(db.session, user, group, requester)
+            rship.add_user_group(db.session, user, group, requester)
         else:
-            rship.removeUserGroup(db.session, user, group, requester)
+            rship.remove_user_group(db.session, user, group, requester)
         db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
@@ -293,14 +291,14 @@ def addUserToGroup(user, group):
 
 
 @app.route('/pap/grouppermissions/<group>/<permission>', methods=['POST', 'DELETE'])
-def addGroupPermission(group, permission):
+def add_group_permission(group, permission):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         if request.method == 'POST':
-            rship.addGroupPermission(db.session, group, permission, requester)
+            rship.add_group_permission(db.session, group, permission, requester)
         else:
-            rship.removeGroupPermission(db.session, group,
-                                        permission, requester)
+            rship.remove_group_permission(db.session, group,
+                                          permission, requester)
         MVGroupPermission.refresh()
         db.session.commit()
         return format_response(200)
@@ -309,14 +307,14 @@ def addGroupPermission(group, permission):
 
 
 @app.route('/pap/userpermissions/<user>/<permission>', methods=['POST', 'DELETE'])
-def addUserPermission(user, permission):
+def add_user_permission(user, permission):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         if request.method == 'POST':
-            rship.addUserPermission(db.session, user, permission, requester)
+            rship.add_user_permission(db.session, user, permission, requester)
         else:
-            rship.removeUserPermission(db.session, user,
-                                       permission, requester)
+            rship.remove_user_permission(db.session, user,
+                                         permission, requester)
         MVUserPermission.refresh()
         db.session.commit()
         return format_response(200)
@@ -325,82 +323,82 @@ def addUserPermission(user, permission):
 
 
 @app.route('/pdp', methods=['POST'])
-def pdpRequest():
+def pdp_request():
     try:
-        pdpData = load_json_from_request(request)
-        veredict = pdpc.pdpMain(db.session, pdpData)
+        pdp_data = load_json_from_request(request)
+        veredict = pdpc.pdp_main(db.session, pdp_data)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
         return make_response(json.dumps({
-                                        "decision": veredict,
-                                        "status": "ok"
-                                        }, default=json_serial), 200)
+            "decision": veredict,
+            "status": "ok"
+        }, default=json_serial), 200)
 
 
 #  Reports endpoints
 @app.route('/pap/user/<user>/directpermissions', methods=['GET'])
-def getUserDirectPermissions(user):
+def get_user_direct_permissions(user):
     try:
-        permissions = reports.getUserDirectPermissions(db.session, user)
+        permissions = reports.get_user_direct_permissions(db.session, user)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
-        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
+        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
 @app.route('/pap/user/<user>/allpermissions', methods=['GET'])
-def getAllUserPermissions(user):
+def get_all_user_permissions(user):
     try:
-        permissions = reports.getAllUserPermissions(db.session, user)
+        permissions = reports.get_all_user_permissions(db.session, user)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
-        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
+        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
 @app.route('/pap/user/<user>/groups', methods=['GET'])
-def getUserGrups(user):
+def get_user_grups(user):
     try:
-        groups = reports.getUserGrups(db.session, user)
+        groups = reports.get_user_groups(db.session, user)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
-        groupsSafe = list(map(lambda p: p.safeDict(), groups))
-        return make_response(json.dumps({"groups": groupsSafe}, default=json_serial), 200)
+        groups_safe = list(map(lambda p: p.safeDict(), groups))
+        return make_response(json.dumps({"groups": groups_safe}, default=json_serial), 200)
 
 
 @app.route('/pap/group/<group>/permissions', methods=['GET'])
-def getGroupPermissions(group):
+def get_group_permissions(group):
     try:
-        permissions = reports.getGroupPermissions(db.session, group)
+        permissions = reports.get_group_permissions(db.session, group)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
-        permissionsSafe = list(map(lambda p: p.safeDict(), permissions))
-        return make_response(json.dumps({"permissions": permissionsSafe}, default=json_serial), 200)
+        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
 @app.route('/pap/group/<group>/users', methods=['GET'])
-def getGroupUsers(group):
+def get_group_users(group):
     try:
-        users = reports.getGroupUsers(db.session, group)
+        users = reports.get_group_users(db.session, group)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
     else:
-        usersSafe = list(map(lambda p: p.safeDict(), users))
-        return make_response(json.dumps({"users": usersSafe}, default=json_serial), 200)
+        users_safe = list(map(lambda p: p.safeDict(), users))
+        return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
 
 
-# passwd related endpoints
-@app.route('/passwd/reset/<username>', methods=['POST'])
-def passwdResetRequest(username):
+# password related endpoints
+@app.route('/password/reset/<username>', methods=['POST'])
+def passwd_reset_request(username):
     if conf.emailHost == 'NOEMAIL':
         return format_response(501, "Feature not configured")
     try:
-        pwdc.createPasswordResetRequest(db.session, username)
+        pwdc.create_password_reset_request(db.session, username)
         db.session.commit()
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
@@ -408,26 +406,26 @@ def passwdResetRequest(username):
         return format_response(200)
 
 
-# passwd related endpoints
-@app.route('/passwd/resetlink', methods=['POST'])
-def passwdReset():
+# password related endpoints
+@app.route('/password/resetlink', methods=['POST'])
+def password_reset():
     try:
         link = request.args.get('link')
-        resetData = load_json_from_request(request)
-        updatingUser = pwdc.resetPassword(db.session, link, resetData)
+        reset_data = load_json_from_request(request)
+        updating_user = pwdc.reset_password(db.session, link, reset_data)
 
         # password updated. Should reconfigure kong and Invalidate
         # all previous logins
-        kongData = kong.configure_kong(updatingUser.username)
-        if kongData is None:
+        kong_data = kong.configure_kong(updating_user.username)
+        if kong_data is None:
             return format_response(500,
-                                  'failed to configure verification subsystem')
+                                   'failed to configure verification subsystem')
 
-        kong.revoke_kong_secret(updatingUser.username, updatingUser.kongId)
-        updatingUser.secret = kongData['secret']
-        updatingUser.key = kongData['key']
-        updatingUser.kongid = kongData['kongid']
-        db.session.add(updatingUser)
+        kong.revoke_kong_secret(updating_user.username, updating_user.kongId)
+        updating_user.secret = kong_data['secret']
+        updating_user.key = kong_data['key']
+        updating_user.kongid = kong_data['kongid']
+        db.session.add(updating_user)
         db.session.commit()
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
@@ -435,12 +433,12 @@ def passwdReset():
         return format_response(200)
 
 
-@app.route('/passwd/update', methods=['POST'])
-def updatePasswd():
+@app.route('/password/update', methods=['POST'])
+def update_password():
     try:
-        userId = auth.user_id_from_jwt(request.headers.get('Authorization'))
-        updateData = load_json_from_request(request)
-        pwdc.updateEndpoint(db.session, userId, updateData)
+        user_id = auth.user_id_from_jwt(request.headers.get('Authorization'))
+        update_data = load_json_from_request(request)
+        pwdc.update_endpoint(db.session, user_id, update_data)
         db.session.commit()
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
@@ -448,11 +446,13 @@ def updatePasswd():
         return format_response(200)
 
 
+# TODO: When to remove this endpoint?
 # endpoint for development use. Should be blocked on prodution
 @app.route('/admin/dropcache', methods=['DELETE'])
-def dropCache():
+def drop_cache():
     cache.delete_key()
     return format_response(200)
+
 
 @app.route('/admin/tenants', methods=['GET'])
 def list_tenants():
@@ -463,6 +463,7 @@ def list_tenants():
         return make_response(json.dumps({"tenants": tenants}), 200)
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)

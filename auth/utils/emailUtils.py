@@ -19,5 +19,5 @@ def send_mail(to, subject, html_msg):
         s.starttls()
     s.login(conf.emailUsername, conf.emailPasswd)
 
-    x = s.sendmail(conf.emailUsername, [to], msg.as_string())
+    s.sendmail(conf.emailUsername, [to], msg.as_string())
     s.quit()
