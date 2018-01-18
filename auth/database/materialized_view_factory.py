@@ -5,7 +5,7 @@
 from sqlalchemy.ext import compiler
 from sqlalchemy.schema import DDLElement
 
-from .flaskAlchemyInit import app, db
+from .flaskAlchemyInit import db
 
 
 class CreateMaterializedView(DDLElement):
@@ -61,5 +61,5 @@ class MaterializedView(db.Model):
 
     @classmethod
     def refresh(cls, concurrently=True):
-        '''Refreshes the current materialized view'''
+        """Refreshes the current materialized view"""
         refresh_mat_view(cls.__table__.fullname, concurrently)

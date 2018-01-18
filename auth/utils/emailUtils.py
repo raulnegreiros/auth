@@ -4,11 +4,11 @@ from email.mime.text import MIMEText
 import conf
 
 
-def sendMail(to, subject, htmlMsg):
+def send_mail(to, subject, html_msg):
     if conf.emailHost == 'NOEMAIL':
         return
     # TODO: I think we should put this function in a worker thread
-    msg = MIMEText(htmlMsg, 'html')
+    msg = MIMEText(html_msg, 'html')
 
     msg['Subject'] = subject
     msg['From'] = conf.emailUsername
@@ -19,5 +19,5 @@ def sendMail(to, subject, htmlMsg):
         s.starttls()
     s.login(conf.emailUsername, conf.emailPasswd)
 
-    x = s.sendmail(conf.emailUsername, [to], msg.as_string())
+    s.sendmail(conf.emailUsername, [to], msg.as_string())
     s.quit()

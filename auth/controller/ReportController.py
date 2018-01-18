@@ -1,25 +1,23 @@
-# this file contains usefull functions for
-# easily get information about permissions, groups and user
-import sqlalchemy
+# this file contains useful functions for
+# getting information about permissions, groups and users
+import sqlalchemy.orm.exc as orm_exceptions
 
-from database.Models import Permission, User, Group, PermissionEnum
-from database.Models import UserPermission, GroupPermission, UserGroup
+from database.Models import User, Group
 from database.flaskAlchemyInit import HTTPRequestError
 
 
-def getUserDirectPermissions(dbSession, user):
+def get_user_direct_permissions(db_session, user):
     try:
         user = User.getByNameOrID(user)
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
-
     return user.permissions
 
 
-def getAllUserPermissions(dbSession, user):
+def get_all_user_permissions(db_session, user):
     try:
         user = User.getByNameOrID(user)
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
 
     permissions = user.permissions
@@ -31,28 +29,28 @@ def getAllUserPermissions(dbSession, user):
     return list({v.id: v for v in permissions}.values())
 
 
-def getUserGrups(dbSession, user):
+def get_user_groups(db_session, user):
     try:
         user = User.getByNameOrID(user)
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
     else:
         return user.groups
 
 
-def getGroupPermissions(dbSession, group):
+def get_group_permissions(db_session, group):
     try:
         group = Group.getByNameOrID(group)
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this name or ID")
     else:
         return group.permissions
 
 
-def getGroupUsers(dbSession, group):
+def get_group_users(db_session, group):
     try:
         group = Group.getByNameOrID(group)
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this name or ID")
     else:
         return group.users

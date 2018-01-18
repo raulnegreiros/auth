@@ -41,7 +41,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=get_requirements('requirements/requirements.txt'),
-    setup_requires=('versiontools'),
+    setup_requires='versiontools',
 
     author='Matheus Magalhaes',
     author_email='matheusr@cpqd.com.br',

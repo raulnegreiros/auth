@@ -1,10 +1,10 @@
-'''
+"""
  This file purpose is to configure Flask with Alchemy
  Also, some generic HTTP formatter functions are provided
  There is also a generic exception class for HTTP errors
  This code should be kept independent of the other modules
  so it can be reused in any Flask + Alchemy project
-'''
+"""
 
 from flask import Flask
 from flask import make_response as fmake_response
@@ -40,12 +40,12 @@ else:
 app.logger.setLevel(logging.DEBUG)
 
 # Select database driver
-if (dbconf.dbName == 'postgres'):
+if dbconf.dbName == 'postgres':
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres+pypostgresql://' + \
                 dbconf.dbUser + ':' + dbconf.dbPdw + '@' + dbconf.dbHost
 
 else:
-    LOGGER.error("Currently, there is no suport for database " + dbconf.dbName)
+    app.logger.error("Currently, there is no suport for database " + dbconf.dbName)
     exit(-1)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -53,9 +53,9 @@ db = SQLAlchemy(app)
 
 
 class HTTPRequestError(Exception):
-    def __init__(self, errorCode, message):
+    def __init__(self, error_code, message):
         self.message = message
-        self.errorCode = errorCode
+        self.errorCode = error_code
 
 
 # Utility function for HTTP responses
@@ -65,18 +65,17 @@ def make_response(payload, status):
     return resp
 
 
-def formatResponse(status, message=None):
-    payload = None
+def format_response(status, message=None):
     if message:
         payload = json.dumps({'message': message, 'status': status})
-    elif status >= 200 and status < 300:
+    elif 200 <= status < 300:
         payload = json.dumps({'message': 'ok', 'status': status})
     else:
         payload = json.dumps({'message': 'Request failed', 'status': status})
     return make_response(payload, status)
 
 
-def loadJsonFromRequest(request):
+def load_json_from_request(request):
     if request.mimetype != 'application/json':
         raise HTTPRequestError(400, 'invalid mimetype')
 

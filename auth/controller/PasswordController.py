@@ -1,19 +1,20 @@
-# This file contains function that implement password
+# This file contains function that implements password
 # related policies
 
 import logging
 import binascii
 from pbkdf2 import crypt
 import os
-import sqlalchemy
 import datetime
+
+import sqlalchemy.orm.exc as orm_exceptions
 from difflib import SequenceMatcher
 from marisa_trie import Trie
 
 from database.flaskAlchemyInit import HTTPRequestError
 from database.historicModels import PasswdInactive, PasswordRequestInactive
 from database.Models import PasswordRequest, User
-from utils.emailUtils import sendMail
+from utils.emailUtils import send_mail
 import conf
 
 LOGGER = logging.getLogger('auth.' + __name__)
@@ -23,248 +24,245 @@ LOGGER.setLevel(logging.INFO)
 
 # read a password blacklist file
 # and put these password on a trie
-def loadPasswordBlacklist():
-    global passwdBlackList
-    if conf.passwdBlackList == 'NOBLACKLIST':
+def load_password_blacklist():
+    global password_blackList
+    if conf.password_blackList == 'NOBLACKLIST':
         LOGGER.warning('No password blacklist file defined.')
-        passwdBlackList = Trie()
+        password_blackList = Trie()
         return
 
     if os.path.isfile('compiledPwdBlacklist.bin'):
         LOGGER.info('Loading pre-compiled password blacklist...')
-        passwdBlackList = Trie()
-        passwdBlackList.load('compiledPwdBlacklist.bin')
+        password_blackList = Trie()
+        password_blackList.load('compiledPwdBlacklist.bin')
 
     else:
         try:
             LOGGER.info('Compiling password blacklist...')
-            with open(conf.passwdBlackList, encoding="utf-8") as f:
+            with open(conf.password_blackList, encoding="utf-8") as f:
                 pwds = f.read().splitlines()
-                passwdBlackList = Trie(pwds)
-            passwdBlackList.save('compiledPwdBlacklist.bin')
+                password_blackList = Trie(pwds)
+            password_blackList.save('compiledPwdBlacklist.bin')
         except FileNotFoundError:
-            LOGGER.error('File ' + conf.passwdBlackList
+            LOGGER.error('File ' + conf.password_blackList
                          + ' not found. Aborting.')
             exit(-1)
 
 
 # load password blacklist on startup
-loadPasswordBlacklist()
+load_password_blacklist()
 
 
 # check if a password is obvious weak
 # throws a exception if the password fail a test
-def checkPaswordFormat(user, passwd):
-    passwdLen = len(passwd)
-    if passwdLen < conf.passwdMinLen:
+def check_password_format(user, password):
+    password_len = len(password)
+    if password_len < conf.passwdMinLen:
         raise HTTPRequestError(400, 'password must have at least '
                                     + str(conf.passwdMinLen)
                                     + ' characters')
-    if passwdLen > 512:
+    if password_len > 512:
         raise HTTPRequestError(400, 'Calm down! 512 characters is the '
-                                    ' maximum password len')
-    lowerPwd = passwd.lower()
+                                    ' maximum password length')
+    lower_pwd = password.lower()
 
     # check if the password can be guessed with user info
-    if (
-            SequenceMatcher(None, lowerPwd, user.username)
-            .find_longest_match(0, passwdLen, 0, len(user.username))
-            .size > 4
-            or
-            SequenceMatcher(None, lowerPwd, user.email)
-            .find_longest_match(0, passwdLen, 0, len(user.email))
-            .size > 4
-            or
-            SequenceMatcher(None, lowerPwd, user.name.lower())
-            .find_longest_match(0, passwdLen, 0, len(user.name.lower()))
+    if (SequenceMatcher(None, lower_pwd, user.username)
+        .find_longest_match(0, password_len, 0, len(user.username))
+        .size > 4
+        or
+        SequenceMatcher(None, lower_pwd, user.email)
+        .find_longest_match(0, password_len, 0, len(user.email))
+        .size > 4
+        or
+        SequenceMatcher(None, lower_pwd, user.name.lower())
+        .find_longest_match(0, password_len, 0, len(user.name.lower()))
             .size > 4):
-        raise HTTPRequestError(400, 'Please, choose a password'
+        raise HTTPRequestError(400, 'Please, choose a password that is'
                                     ' harder to guess. Your user info may'
                                     ' give hints on this password')
 
     # check for dull sequences
     # like 'aaa' '123' 'abc'
-    lastChar = '\0'
-    countEquals = 1
-    countUp = 1
-    countDown = 1
-    for c in passwd:
-        if (ord(c) == ord(lastChar) + 1):
-            countUp += 1
+    last_char = '\0'
+    count_equals = 1
+    count_up = 1
+    count_down = 1
+    for c in password:
+        if ord(c) == ord(last_char) + 1:
+            count_up += 1
         else:
-            countUp = 1
+            count_up = 1
 
-        if (ord(c) == ord(lastChar) - 1):
-            countDown += 1
+        if ord(c) == ord(last_char) - 1:
+            count_down += 1
         else:
-            countDown = 1
+            count_down = 1
 
-        if (c == lastChar):
-            count += 1
+        if c == last_char:
+            count_equals += 1
         else:
-            count = 1
+            count_equals = 1
 
-        if count == 3 or countUp == 3 or countDown == 3:
+        if count_equals == 3 or count_up == 3 or count_down == 3:
             raise HTTPRequestError(400, 'do not use passwords with '
                                         ' easy to guess'
                                         ' character sequences')
-
-        lastChar = c
+        last_char = c
 
     # check vs a blacklist
-    if passwd in passwdBlackList:
+    if password in password_blackList:
         raise HTTPRequestError(400, "This password can't be used, as it is "
                                     " in our blacklist of bad passwords")
 
 
-def createPwd(passwd):
+def create_pwd(password):
     salt = str(binascii.hexlify(os.urandom(8)), 'ascii')
-    hash = crypt(passwd, salt, 1000).split('$').pop()
-    return salt, hash
+    password_hash = crypt(password, salt, 1000).split('$').pop()
+    return salt, password_hash
 
 
-# update a passwd.
-# verify if the new passwd was used before
-# save the current passwd on inative table
-def update(dbSession, user, newPasswd):
-    checkPaswordFormat(user, newPasswd)
+# update a password.
+# verify if the new password was used before
+# save the current password on inactive table
+def update(db_session, user, new_password):
+    check_password_format(user, new_password)
 
-    # check actual passwd
+    # check actual password
     if user.hash and (user.hash ==
-                      crypt(newPasswd, user.salt, 1000).split('$').pop()):
+                      crypt(new_password, user.salt, 1000).split('$').pop()):
         raise HTTPRequestError(400, "Please, choose a password"
-                                    " not used before")
+                                    " that was not used before.")
 
     # check all old password from database
     if conf.passwdHistoryLen > 0:
         oldpwds = (
-                    dbSession.query(PasswdInactive)
+                    db_session.query(PasswdInactive)
                     .filter_by(user_id=user.id)
                     .order_by(PasswdInactive.deletion_date.desc())
                     .limit(conf.passwdHistoryLen)
                    )
 
         for pwd in oldpwds:
-            if pwd.hash == crypt(newPasswd, pwd.salt, 1000).split('$').pop():
+            if pwd.hash == crypt(new_password, pwd.salt, 1000).split('$').pop():
                 raise HTTPRequestError(400, "Please, choose a password"
-                                            " not used before")
-    PasswdInactive.createInactiveFromUser(dbSession, user)
-    return createPwd(newPasswd)
+                                            " that was not used before")
+    PasswdInactive.createInactiveFromUser(db_session, user)
+    return create_pwd(new_password)
 
 
 # an authenticated user can update it password
-def updateEndpoint(dbSession, userId, upData):
-    if 'oldpasswd' not in upData.keys() or len(upData['oldpasswd']) == 0:
+def update_endpoint(db_session, user_id, up_data):
+    if up_data.get('oldpasswd', ""):
         raise HTTPRequestError(400, "Missing user's oldpasswd")
 
-    if 'newpasswd' not in upData.keys() or len(upData['newpasswd']) == 0:
+    if up_data.get('newpasswd', ""):
         raise HTTPRequestError(400, "Missing user's newpasswd")
 
     try:
-        user = dbSession.query(User). \
-            filter_by(id=userId).one()
-    except sqlalchemy.orm.exc.NoResultFound:
+        user = db_session.query(User). \
+            filter_by(id=user_id).one()
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, 'User not found')
 
     if user.hash and (user.hash ==
-       crypt(upData['oldpasswd'], user.salt, 1000).split('$').pop()):
-        user.salt, user.hash = update(dbSession, user, upData['newpasswd'])
-        dbSession.add(user)
+       crypt(up_data['oldpasswd'], user.salt, 1000).split('$').pop()):
+        user.salt, user.hash = update(db_session, user, up_data['newpasswd'])
+        db_session.add(user)
     else:
         raise HTTPRequestError(400, "Incorrect password")
 
 
-# chech if a PasswordRequest expired
+# check if a PasswordRequest is expired
 # if it is, will be removed
-def chechRequestValidity(dbSession, resetRequest):
-    if ((resetRequest.created_date
-        + datetime.timedelta(minutes=conf.passwdRequestExpiration))
+def check_request_validity(db_session, reset_request):
+    if ((reset_request.created_date
+         + datetime.timedelta(minutes=conf.passwdRequestExpiration))
             < datetime.datetime.utcnow()):
         # save on inactive table before deletion
-        PasswordRequestInactive.createInactiveFromRequest(dbSession,
-                                                          resetRequest)
-        dbSession.delete(resetRequest)
-        dbSession.commit()
+        PasswordRequestInactive.createInactiveFromRequest(db_session,
+                                                          reset_request)
+        db_session.delete(reset_request)
+        db_session.commit()
         return False
     else:
         return True
 
 
-def resetPassword(dbSession, link, resetData):
-    if 'passwd' not in resetData.keys():
+def reset_password(db_session, link, reset_data):
+    if 'passwd' not in reset_data.keys():
         raise HTTPRequestError(400, 'missing password')
     try:
-        resetRequest = dbSession.query(PasswordRequest). \
+        reset_request = db_session.query(PasswordRequest). \
             filter_by(link=link).one()
-        if chechRequestValidity(dbSession, resetRequest):
-            user = User.getByNameOrID(resetRequest.user_id)
-            user.salt, user.hash = update(dbSession, user, resetData['passwd'])
+        if check_request_validity(db_session, reset_request):
+            user = User.getByNameOrID(reset_request.user_id)
+            user.salt, user.hash = update(db_session, user, reset_data['passwd'])
 
             # remove this used reset request
-            PasswordRequestInactive.createInactiveFromRequest(dbSession,
-                                                              resetRequest)
-            dbSession.delete(resetRequest)
+            PasswordRequestInactive.createInactiveFromRequest(db_session,
+                                                              reset_request)
+            db_session.delete(reset_request)
             return user
         else:
             raise HTTPRequestError(404, 'Page not found or expired')
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, 'Page not found or expired')
 
 
-def createPasswordResetRequest(dbSession, username):
+def create_password_reset_request(db_session, username):
     try:
-        user = dbSession.query(User). \
+        user = db_session.query(User). \
             filter_by(username=username).one()
-    except sqlalchemy.orm.exc.NoResultFound:
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, 'User not found')
 
-    # veify if this user have and ative password reset request
-    oldRequest = dbSession.query(PasswordRequest). \
+    # verify if this user have an active password reset request
+    old_request = db_session.query(PasswordRequest). \
         filter_by(user_id=user.id).one_or_none()
-    if oldRequest and chechRequestValidity(dbSession, oldRequest):
+    if old_request and check_request_validity(db_session, old_request):
         raise HTTPRequestError(409, 'You have a password reset'
                                     ' request in progress')
 
-    requestDict = {
+    request_dict = {
                     'user_id': user.id,
                     'link': str(binascii.hexlify(os.urandom(16)), 'ascii')
                   }
 
-    passwdRequest = PasswordRequest(**requestDict)
-    dbSession.add(passwdRequest)
+    password_request = PasswordRequest(**request_dict)
+    db_session.add(password_request)
 
     with open('templates/passwordReset.html', 'r') as f:
         html = f.read()
-    resetLink = conf.resetPwdView + '?link=' + requestDict['link']
-    html = html.format(name=user.name, link=resetLink)
-    sendMail(user.email, 'Password Reset', html)
+    reset_link = conf.resetPwdView + '?link=' + request_dict['link']
+    html = html.format(name=user.name, link=reset_link)
+    send_mail(user.email, 'Password Reset', html)
 
 
-def createPasswordSetRequest(dbSession, user):
-    # veify if this user have an ative password reset request
-    requestDict = {
+def create_password_set_request(db_session, user):
+    # verify if this user have an active password reset request
+    request_dict = {
                     'user_id': user.id,
                     'link': str(binascii.hexlify(os.urandom(16)), 'ascii')
                   }
 
-    passwdRequest = PasswordRequest(**requestDict)
-    dbSession.add(passwdRequest)
+    password_request = PasswordRequest(**request_dict)
+    db_session.add(password_request)
 
     with open('templates/passwordSet.html', 'r') as f:
         html = f.read()
-    resetLink = conf.resetPwdView + '?link=' + requestDict['link']
+    reset_link = conf.resetPwdView + '?link=' + request_dict['link']
     html = html.format(name=user.name,
-                       link=resetLink,
+                       link=reset_link,
                        username=user.username)
-    sendMail(user.email, 'Account Activation', html)
+    send_mail(user.email, 'Account Activation', html)
 
 
-# force expiration of one user passwords reset request
-def expirePasswordResetRequests(dbSession, userid):
-    resetRequest = dbSession.query(PasswordRequest). \
+# force expiration of the user's password reset request
+def expire_password_reset_requests(db_session, userid):
+    reset_request = db_session.query(PasswordRequest). \
         filter_by(user_id=userid).one_or_none()
-    if resetRequest:
-            # save on inactive table before deletion
-            PasswordRequestInactive.createInactiveFromRequest(dbSession,
-                                                              resetRequest)
-            dbSession.delete(resetRequest)
+    if reset_request:
+        # save on inactive table before deletion
+        PasswordRequestInactive.createInactiveFromRequest(db_session, reset_request)
+        db_session.delete(reset_request)

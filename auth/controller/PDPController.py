@@ -1,72 +1,70 @@
 import re
-import sqlalchemy
 
-import conf
-from database.Models import Permission, User, Group, PermissionEnum
+from database.Models import PermissionEnum
 from database.Models import MVUserPermission, MVGroupPermission
-from database.flaskAlchemyInit import HTTPRequestError, app
-from controller.AuthenticationController import getJwtPayload
+from database.flaskAlchemyInit import HTTPRequestError
+from controller.AuthenticationController import get_jwt_payload
 import database.Cache as cache
 from database.flaskAlchemyInit import log
 
 
 # Helper function to check request fields
-def checkRequest(pdpRequest):
-    if 'action' not in pdpRequest.keys() or len(pdpRequest['action']) == 0:
+def check_request(pdp_request):
+    if 'action' not in pdp_request.keys() or len(pdp_request['action']) == 0:
         raise HTTPRequestError(400, "Missing action")
 
-    if 'jwt' not in pdpRequest.keys() or len(pdpRequest['jwt']) == 0:
+    if 'jwt' not in pdp_request.keys() or len(pdp_request['jwt']) == 0:
         raise HTTPRequestError(400, "Missing JWT")
 
-    if 'resource' not in pdpRequest.keys() or len(pdpRequest['resource']) == 0:
+    if 'resource' not in pdp_request.keys() or len(pdp_request['resource']) == 0:
         raise HTTPRequestError(400, "Missing resource")
 
 
-def pdpMain(dbSession, pdpRequest):
-    checkRequest(pdpRequest)
-    jwtPayload = getJwtPayload(pdpRequest['jwt'])
-    user_id = jwtPayload['userid']
+def pdp_main(db_session, pdp_request):
+    check_request(pdp_request)
+    jwt_payload = get_jwt_payload(pdp_request['jwt'])
+    user_id = jwt_payload['userid']
 
     # try to retrieve the veredict from cache
-    cachedVeredict = cache.getKey(user_id, pdpRequest['action'],
-                                  pdpRequest['resource'])
+    cached_veredict = cache.get_key(user_id, pdp_request['action'],
+                                    pdp_request['resource'])
     # Return the cached answer if it exist
-    if cachedVeredict:
+    if cached_veredict:
         log().info('user ' + str(user_id) + ' '
-                   + cachedVeredict + ' to ' + pdpRequest['action']
-                   + ' on ' + pdpRequest['resource'])
-        return cachedVeredict
+                   + cached_veredict + ' to ' + pdp_request['action']
+                   + ' on ' + pdp_request['resource'])
+        return cached_veredict
 
-    veredict = iteratePermissions(user_id,
-                                  jwtPayload['groups'],
-                                  pdpRequest['action'],
-                                  pdpRequest['resource'])
+    veredict = iterate_permissions(user_id,
+                                   jwt_payload['groups'],
+                                   pdp_request['action'],
+                                   pdp_request['resource'])
     # Registry this veredict on cache
-    cache.setKey(user_id,
-                 pdpRequest['action'],
-                 pdpRequest['resource'],
-                 veredict)
+    cache.set_key(user_id,
+                  pdp_request['action'],
+                  pdp_request['resource'],
+                  veredict)
 
     log().info('user ' + str(user_id) + ' '
-             + veredict + ' to ' + pdpRequest['action']
-             + ' on ' + pdpRequest['resource'])
+               + veredict + ' to ' + pdp_request['action']
+               + ' on ' + pdp_request['resource'])
     return veredict
 
 
-def iteratePermissions(user_id, groupsList, action, resource):
+def iterate_permissions(user_id, groups_list, action, resource):
     permit = False
 
     # check user direct permissions
     for p in MVUserPermission.query.filter_by(user_id=user_id):
-        granted = makeDecision(p, action, resource)
+        granted = make_decision(p, action, resource)
         # user permissions have precedence over group permissions
         if granted != PermissionEnum.notApplicable:
             return granted.value
 
     # check user group permissions
-    for g in groupsList:
+    for g in groups_list:
         for p in MVGroupPermission.query.filter_by(group_id=g):
-            granted = makeDecision(p, action, resource)
+            granted = make_decision(p, action, resource)
             # deny have precedence over permits
             if granted == PermissionEnum.deny:
                 return granted.value
@@ -82,7 +80,7 @@ def iteratePermissions(user_id, groupsList, action, resource):
 # Receive a Permissions and try to match the Given
 # path + method with it. Return 'permit' or 'deny' if succed matching.
 # return 'notApplicable' otherwise
-def makeDecision(permission, method, path):
+def make_decision(permission, method, path):
     # if the Path and method Match
     if re.match(r'(^' + permission.path + ')', path) is not None:
         if re.match(r'(^' + permission.method + ')', method):

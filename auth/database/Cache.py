@@ -6,14 +6,14 @@ import redis
 import logging
 
 import conf
-from .flaskAlchemyInit import app, db
+from .flaskAlchemyInit import app
 
 LOGGER = logging.getLogger('auth.' + __name__)
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.INFO)
 
 
-if (conf.cacheName == 'redis'):
+if conf.cacheName == 'redis':
     REDIS_URL = ('redis://' + conf.cacheUser + ':' + conf.cachePdw
                  + '@' + conf.cacheHost + ':6379/' + conf.cacheDatabase)
     app.config['DBA_URL'] = REDIS_URL
@@ -21,20 +21,19 @@ if (conf.cacheName == 'redis'):
                              encoding="utf-8", socket_keepalive=True,
                              charset="utf-8", decode_responses=True)
 
-
-elif (conf.cacheName == 'NOCACHE'):
+elif conf.cacheName == 'NOCACHE':
     LOGGER.warning("Warning. Cache policy set to NOCACHE."
-                   "This may degrade PDP perfomance.")
+                   "This may degrade PDP performance.")
     redis_store = None
 
 else:
-    LOGGER.error("Currently, there is no suport for cache policy "
+    LOGGER.error("Currently, there is no support for cache policy "
                  + conf.dbName)
     exit(-1)
 
 
 # create a cache key
-def generateKey(userid, action, resource):
+def generate_key(userid, action, resource):
     # add a prefix to every key, to avoid colision with others aplications
     key = 'PDP;'
     key += str(userid) + ';' + action + ';' + resource
@@ -43,20 +42,18 @@ def generateKey(userid, action, resource):
 
 # utility function to get a value on redis
 # return None if the value can't be found
-def getKey(userid, action, resource):
+def get_key(userid, action, resource):
     if redis_store:
         try:
-            cachedValue = redis_store. \
-                            get(generateKey(userid, action, resource))
-            return cachedValue
+            return redis_store.get(generate_key(userid, action, resource))
         except redis.exceptions.ConnectionError:
             LOGGER.warning("Failed to connect to redis")
             return None
 
 
-def setKey(userid, action, resource, veredict):
+def set_key(userid, action, resource, veredict):
     try:
-        redis_store.setex(generateKey(
+        redis_store.setex(generate_key(
                                         userid,
                                         action,
                                         resource
@@ -69,13 +66,13 @@ def setKey(userid, action, resource, veredict):
 
 
 # invalidate a key. may use regex patterns
-def deleteKey(userid='*', action='*', resource='*'):
+def delete_key(userid='*', action='*', resource='*'):
     if redis_store:
-        # python-RE and Redis use diferent wildcard representations
+        # python-RE and Redis use different wildcard representations
         action = action.replace('(.*)', '*')
         resource = resource.replace('(.*)', '*')
-        # TODO: put the cache update on a worker threaded
-        key = generateKey(userid, action, resource)
+        # TODO: put the cache update on a worker thread
+        key = generate_key(userid, action, resource)
         try:
             for dkey in redis_store.scan_iter(key):
                 redis_store.delete(dkey)

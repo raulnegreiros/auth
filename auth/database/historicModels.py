@@ -1,13 +1,11 @@
-# This file contains models for inative users and passwords.
+# This file contains models for inactive users and passwords.
 # These kind of information should not be hard removed
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Boolean, DateTime
+
+from sqlalchemy import Column, String, Integer, DateTime
 import datetime
 
-import conf as dbconf
 from .inputConf import UserLimits
-from .Models import User
-from .flaskAlchemyInit import app, db
+from .flaskAlchemyInit import db
 
 # a list of special fields present on all historic tables
 # this list is necessary to avoid 'AttributeError' when coping from
