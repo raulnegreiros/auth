@@ -4,8 +4,7 @@ before_script:
   - npm install -g aglio
 
 script:
-  - cd docs
-  - aglio -i ./apis.apib -o apis.html
+  - aglio -i docs/apis.apib -o docs/apis.html 
 
 deploy:
   local_dir: docs
