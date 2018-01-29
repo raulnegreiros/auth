@@ -117,6 +117,7 @@ def update_user(db_session, user, updated_info, requester):
         if k in User.fillable
     }
     old_user = User.getByNameOrID(user)
+    old_service = old_user.service
 
     if 'username' in updated_info.keys() \
             and updated_info['username'] != old_user.username:
@@ -142,7 +143,7 @@ def update_user(db_session, user, updated_info, requester):
     if 'email' in updated_info.keys():
         old_user.email = updated_info['email']
 
-    return old_user
+    return (old_user, old_service)
 
 
 def delete_user(db_session, user, requester):
@@ -170,6 +171,7 @@ def delete_user(db_session, user, requester):
         log().info('user ' + user.username + ' deleted by '
                    + requester['username'],
                    user.safeDict())
+        return user;
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID")
 
@@ -382,6 +384,12 @@ def delete_group(db_session, group, requester):
         db_session.delete(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID")
+
+def count_tenant_users(db_session, tenant):
+    try:
+        return db_session.query(User).filter(User.service == tenant).count()
+    except orm_exceptions.NoResultFound:
+        return 0
 
 
 def list_tenants(db_session):
