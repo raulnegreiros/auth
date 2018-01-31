@@ -22,6 +22,8 @@ from database.Models import MVUserPermission, MVGroupPermission
 import database.Cache as cache
 
 from utils.serialization import json_serial
+from database.flaskAlchemyInit import log
+from controller.KafkaPublisher import send_notification
 
 
 # Authentication endpoint
@@ -65,6 +67,11 @@ def create_user():
         if conf.emailHost != 'NOEMAIL':
             pwdc.create_password_set_request(db.session, new_user)
             db.session.commit()
+
+        if crud.count_tenant_users(db.session, new_user.service) == 1:
+            log().info("will emit tenant lifecycle event {} - CREATE".format(new_user.service))
+            send_notification({"type": 'CREATE', 'tenant': new_user.service})
+
         return make_response(json.dumps({
             "user": new_user.safeDict(),
             "groups": group_success,
@@ -103,19 +110,27 @@ def update_user(user):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         auth_data = load_json_from_request(request)
-        old_user = crud.update_user(db.session, user, auth_data, requester)
+        updated_user, old_service = crud.update_user(db.session, user, auth_data, requester)
 
         # Create a new kong secret and delete the old one
-        kong_data = kong.configure_kong(old_user.username)
+        kong_data = kong.configure_kong(updated_user.username)
         if kong_data is None:
             return format_response(500, 'failed to configure verification subsystem')
 
-        kong.revoke_kong_secret(old_user.username, old_user.kongId)
-        old_user.secret = kong_data['secret']
-        old_user.key = kong_data['key']
-        old_user.kongid = kong_data['kongid']
-        db.session.add(old_user)
+        kong.revoke_kong_secret(updated_user.username, updated_user.kongId)
+        updated_user.secret = kong_data['secret']
+        updated_user.key = kong_data['key']
+        updated_user.kongid = kong_data['kongid']
+        db.session.add(updated_user)
         db.session.commit()
+
+        if crud.count_tenant_users(db.session, old_service) == 0:
+            log().info("will emit tenant lifecycle event {} - DELETE".format(old_service))
+            send_notification({"type": 'DELETE', 'tenant': old_service})
+
+        if crud.count_tenant_users(db.session, updated_user.service) == 1:
+            log().info("will emit tenant lifecycle event {} - CREATE".format(updated_user.service))
+            send_notification({"type": 'CREATE', 'tenant': updated_user.service})
         return format_response(200)
 
     except HTTPRequestError as err:
@@ -127,11 +142,16 @@ def remove_user(user):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         old_username = crud.get_user(db.session, user).username
-        crud.delete_user(db.session, user, requester)
+        old_user = crud.delete_user(db.session, user, requester)
         kong.remove_from_kong(old_username)
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
         db.session.commit()
+
+        if crud.count_tenant_users(db.session, old_user.service) == 0:
+            log().info("will emit tenant lifecycle event {} - DELETE".format(old_user.service))
+            send_notification({"type": 'DELETE', 'tenant': old_user.service})
+
         return format_response(200, "User removed")
     except HTTPRequestError as err:
         return format_response(err.errorCode, err.message)

@@ -81,3 +81,11 @@ else:
 if passwdMinLen < 6:
     LOGGER.warning("Password minlen can't be less than 6.")
     passwdMinLen = 6
+
+# Where to publish tenancy information to
+kafka_host = 'kafka:9092'
+# Global subject to use when publishing tenancy lifecycle events
+kafka_subject = 'dojot.tenancy'
+
+# Kafka topic (subject) manager
+data_broker_host = 'http://data-broker'
