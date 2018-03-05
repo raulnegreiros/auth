@@ -28,11 +28,6 @@ from controller.KafkaPublisher import send_notification
 from alarmlibrary.connection import RabbitMqClientConnection
 from alarmlibrary.alarm import Alarm, AlarmSeverity
 
-HTTP2ALARM = {
-    400 : "AuthenticationError",
-    401 : "AuthorizationError"
-}
-
 rabbit_client = RabbitMqClientConnection()
 rabbit_client.open(conf.rabbitmq_host)
 
@@ -40,6 +35,12 @@ def publish_alarm(err):
     """
     Publish an alarm for the HTTP2ALARM posible error codes
     """
+
+    HTTP2ALARM = {
+        400 : "AuthenticationError",
+        401 : "AuthorizationError"
+    }
+
     if err.errorCode in HTTP2ALARM:
         alarm = Alarm(namespace="dojot.auth", severity=AlarmSeverity.Minor,
                       domain=HTTP2ALARM[err.errorCode],
