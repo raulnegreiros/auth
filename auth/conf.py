@@ -89,3 +89,5 @@ kafka_subject = 'dojot.tenancy'
 
 # Kafka topic (subject) manager
 data_broker_host = 'http://data-broker'
+
+rabbitmq_host = os.environ.get("RABBITMQ_HOST", "rabbitmq")
