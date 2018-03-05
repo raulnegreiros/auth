@@ -24,9 +24,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=get_requirements('requirements/requirements.txt'),
-    dependency_links=[
-        'https://github.com/dojot/alarm-client-python/tarball/master'
-    ],
     setup_requires='versiontools',
 
     author='Matheus Magalhaes',
