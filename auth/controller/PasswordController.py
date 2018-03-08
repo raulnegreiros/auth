@@ -54,7 +54,7 @@ load_password_blacklist()
 
 
 # check if a password is obvious weak
-# throws a exception if the password fail a test
+# throws a exception if the password fail a tests
 def check_password_format(user, password):
     password_len = len(password)
     if password_len < conf.passwdMinLen:
@@ -196,7 +196,7 @@ def reset_password(db_session, link, reset_data):
         reset_request = db_session.query(PasswordRequest). \
             filter_by(link=link).one()
         if check_request_validity(db_session, reset_request):
-            user = User.getByNameOrID(reset_request.user_id)
+            user = User.get_by_name_or_id(reset_request.user_id)
             user.salt, user.hash = update(db_session, user, reset_data['passwd'])
 
             # remove this used reset request

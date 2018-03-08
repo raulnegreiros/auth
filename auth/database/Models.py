@@ -27,25 +27,34 @@ class Permission(db.Model):
     # fields that can be filled by user input
     fillable = ['name', 'path', 'method', 'permission']
 
-    # serialize
     def as_dict(self):
-        tmpDict = {
+        """
+        Creates a dictionary using the contents of this class.
+        :return: A dictionary
+        """
+        tmp_dict = {
                     c.name: getattr(self, c.name)
                     for c in self.__table__.columns
                   }
-        if type(tmpDict['permission']) != str:
-            tmpDict['permission'] = tmpDict['permission'].value
-        return tmpDict
+        if type(tmp_dict['permission']) != str:
+            tmp_dict['permission'] = tmp_dict['permission'].value
+        return tmp_dict
 
-    def safeDict(self):
+    def safe_dict(self):
         return self.as_dict()
 
-    def getByNameOrID(nameOrId):
+    @staticmethod
+    def get_by_name_or_id(name_id: str):
+        """
+        Returns a permission with a particular name or ID
+        :param name_id: The ID from the permission to be retrieved
+        :return: The permission
+        """
         try:
             return db.session.query(Permission). \
-                        filter_by(id=int(nameOrId)).one()
+                        filter_by(id=int(name_id)).one()
         except ValueError:
-            return db.session.query(Permission).filter_by(name=nameOrId).one()
+            return db.session.query(Permission).filter_by(name=name_id).one()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     path = Column(String(PermissionLimits.path), nullable=False)
@@ -74,21 +83,33 @@ class User(db.Model):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-    def safeDict(self):
-        # serialize, but drop sensible fields
+    def safe_dict(self):
+        """
+        Generates a safe dict from this User.
+        This new dictionary is serializable and it doesn't have any sensible fields (such as password)
+        :return: A serializable dictionary without all sensible user fields.
+        """
         return {
                 c.name: str(getattr(self, c.name))
                 for c in self.__table__.columns
                 if c.name not in self.sensibleFields
             }
 
-    def getByNameOrID(nameOrId):
+    @staticmethod
+    def get_by_name_or_id(name_or_id: str):
+        """
+        Returns a permission with a particular name or ID
+        :param name_or_id: The ID from the permission to be retrieved
+        :return: The permission
+        """
+        # TODO This function might be better placed somewhere else. Is it a responsibility of User model
+        # to perform searches in the database?
         try:
             try:
-                integerid = int(nameOrId)
-                return db.session.query(User).filter_by(id=integerid).one()
+                integer_id = int(name_or_id)
+                return db.session.query(User).filter_by(id=integer_id).one()
             except ValueError:
-                return db.session.query(User).filter_by(username=nameOrId).one()
+                return db.session.query(User).filter_by(username=name_or_id).one()
         except NoResultFound:
             raise HTTPRequestError(404, "Unknown user id")
 
@@ -124,10 +145,11 @@ class Group(db.Model):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-    def safeDict(self):
+    def safe_dict(self):
         return self.as_dict()
 
-    def getByNameOrID(nameOrId):
+    def get_by_name_or_id(nameOrId):
+        # TODO This function might be better placed somewhere else.
         try:
             return db.session.query(Group).filter_by(id=int(nameOrId)).one()
         except ValueError:
