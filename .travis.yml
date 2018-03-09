@@ -6,8 +6,8 @@ python:
 script:
   - 'docker build -t ${TRAVIS_REPO_SLUG} .'
   - 'docker tag ${TRAVIS_REPO_SLUG} auth'
+  - 'docker build -t dredd-auth . -f ./tests/Dockerfile'
   - 'cd tests'
-  - 'docker build -t dredd-auth .'
   - 'docker-compose up -d auth-redis postgres'
   - 'docker-compose up auth'
 after_success:
