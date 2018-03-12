@@ -1,17 +1,12 @@
 #!/bin/bash
 
-# wait for database
-python3 /usr/src/app/appLock.py --sleep 10 --max_retries 3
-rc=$?; if [[ ${rc} != 0 ]]; then exit ${rc}; fi
-
 cd auth
-
-# create database tables
-python3 -c "from webRoutes import db; db.create_all()"   2> /dev/null
 
 # create predefined users and groups
 python3 /usr/src/app/auth/initialConf.py
 rc=$?; if [[ ${rc} != 0 ]]; then exit ${rc}; fi
+
+export PYTHONPATH=:/usr/src/app
 
 # handle service initialization
 if [ $1 = 'start' ]; then
