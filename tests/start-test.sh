@@ -1,11 +1,15 @@
 #!/bin/bash
 
-set -e
+set -e -x
 
 # emulate device-manager initial configuration
 echo Running waitForDb
 python3 ./tests/waitForDb.py
 echo waitForDb ok
+
+echo Current directory: $(pwd)
+echo "Listing of ./auth directory:"
+echo $(ls ./auth)
 
 cd auth
 
