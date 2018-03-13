@@ -1,0 +1,226 @@
+FORMAT: 1A
+
+# PY-RBAC CRUD API
+
+Endpoints to perform permissions, groups and profiles management
+
+# Group CRUD Permissions and Group
+
+## Permissions creation and search [/pap/permission]
+### Create a new permission [POST]
+notice that regular expressions can be used on the 'path' and 'method' fields.
+
++ Request (application/json)
+    + Body
+
+            {
+                "path" : "/devices/info/\*",
+                "method" : "POST|PUT|DELETE",
+                "permission" : "permit"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "id": 131
+            }
+
+### Search permission [GET /pap/permission?{path,method,permission}]
+
++ Parameters
+    + path: `"/devices/info/\*` (optional, string) - a path string.
+    + method: `POST` (optional, enum) - one HTTP method.
+    + permission: `permit` (optional, enum) - "permit" or "deny".
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with these filters"
+            }
+
++ Response 200 (application/json)
+ 
+            {
+                "permissions": [
+                    {
+                            "id" : 131,
+                            "path" : "/devices/info/\*",
+                            "method" : "POST|PUT|DELETE",
+                            "permission" : "permit"
+                    },
+                    {
+                            "id" : 132,
+                            "path" : "/auth/user",
+                            "method" : "\*",
+                            "permission" : "deny"
+                    }
+                ]
+            }
+
+## Permissions management [/pap/permission/<id>]
+### Get a permission [GET]
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "id" : 131,
+                "path" : "/devices/info/\*",
+                "method" : "POST|PUT|DELETE",
+                "permission" : "permit"
+            }
+
+### Update a permission [PUT]
++ Request (application/json)
+    + Body
+
+            {
+                "path" : "/devices/info/\*",
+                "method" : "POST|PUT|DELETE",
+                "permission" : "permit"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission with found this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+### Remove a permission [DELETE]
++ Response 404 (application/json)
+    
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+    
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+## Group creation [/pap/group]
+### Create a new group [POST]
+
++ Request (application/json)
+    + Body
+
+            {
+                "name" : "group1",
+                "description" : "a fine group"
+            }
+
++ Response 404 (application/json)
+    
+            {
+                "status": 404,
+                "message": "Group named group1 already exists"
+            }
+
++ Response 200 (application/json)
+    
+            {
+                "status": 200,
+                "id": 3
+            }
+
+
+### Search Groups [GET /pap/group?{name}]
+
++ Parameters
+    + name: `admin` (optional, string) - a group name, or part of a group name.
+
++ Response 404 (application/json)
+    
+            {
+                "status": 404,
+                "message": "No group found with these filters"
+            }
+
++ Response 200 (application/json)
+            
+            {
+                "groups": [
+                    {
+                        "id" : 3,
+                        "name" : "admin",
+                        "description" : "Full privilege group"
+                    },
+                    {
+                        "id" : 4,
+                        "name" : "projectN"
+                        "description" : null
+                    }
+                ]
+            }
+
+## Group management [/pap/group/<id>]
+### Get a group [GET]
++ Response 404 (application/json)
+    
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 200 (application/json)
+        
+            {
+                "id" : 3,
+                "name" : "group1",
+                "description" : null
+            }
+
+### Update a group [PUT]
++ Request (application/json)
+    + Body
+    
+            {
+                "name" : "projectX"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+### Remove a group [DELETE]
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 200 (application/json)
+    
+            {
+                "status": 200,
+                "message": "ok"
+            }

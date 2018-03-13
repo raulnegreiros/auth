@@ -1,0 +1,157 @@
+FORMAT: 1A
+
+# PY-RBAC RELATIONSHIP API
+
+Endpoints to manage relationships between groups, profiles, users and permissions
+
+# Group Relationship management
+
+## Manage relationships between users and groups  [/pap/usergroup/<userid>/<groupid>]
+### Add user to group [POST]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No user found with this ID"
+            }
+
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+### Remove a user from group [DELETE]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No user found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 400,
+                "message": "Can't remove user. A user must always be in one role group"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+
+## Manage relationships between users and permissions  [/pap/userpermissions/<userid>/<permissionid>]
+### Give a permission to a user [POST]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No user found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+### Revoke a user permission [DELETE]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No user found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+## Manage relationships between group and permissions  [/pap/grouppermissions/<groupid>/<permissionid>]
+### Give a permission to a group [POST]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
+### Revoke a group permission [DELETE]
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No permission found with this ID"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }

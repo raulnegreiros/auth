@@ -1,0 +1,260 @@
+FORMAT: 1A
+
+# User Management API
+
+Endpoints to perform user and session management
+
+# Group Auth
+
+## Session management [/]
+
+### Create session [POST]
+Authenticate with the system, returning a session token to be used with API
+
++ Request (application/json)
+    + Body
+
+            {
+                "username" : "admin",
+                "passwd" : "admin"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "jwt": "eyJhb ... pXVCJ9.eyJpc ... 3MIn0.j1iYHo ... yae88PvodY"
+            }
+
++ Response 400 (application/json)
+
+            {
+                "status": 400,
+                "message": "invalid mimetype"
+            }
+
++ Response 400 (application/json)
+
+            {
+                "status": 400,
+                "message": "missing passswd"
+            }
+
++ Response 400 (application/json)
+
+            {
+                "status": 400,
+                "message": "missing username"
+            }
+
++ Response 400 (application/json)
+
+            {
+                "message": "not authorized",
+                "status": 401
+            }
+
+
+## Known users manipulation [/user]
+
+### List known users [GET]
+
+Lists all users known to the platform
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+              "users": [
+                {
+                  "created_by": "0",
+                  "created_date": "2018-01-03 12:49:25.717374",
+                  "email": "admin@noemail.com",
+                  "id": "1",
+                  "name": "Admin (superuser)",
+                  "profile": "admin",
+                  "service": "admin",
+                  "username": "admin"
+                },
+                {
+                  "created_by": "1",
+                  "created_date": "2018-01-04 13:09:03.568749",
+                  "email": "test@noemail.com",
+                  "id": "2",
+                  "name": "test",
+                  "profile": "user",
+                  "service": "test",
+                  "username": "test"
+                }
+              ]
+            }
+
+
++ Response 401 (application/json)
+
+            {"message":"Unauthorized"}
+
+
+### Register a new user [POST]
+Creates a new user, assigning it a service.
+
+Service is the token that associates the user with the set of devices and flows it has access to.
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
+  + Body
+
+            {
+              "username": "test",
+              "service": "test",
+              "email": "test@noemail.com",
+              "name": "test",
+              "profile": "user"
+            }
+
++ Response 200 (application/json)
+
+            {
+              "user": {
+                "id": "2",
+                "name": "test",
+                "username": "test",
+                "service": "test",
+                "email": "test@noemail.com",
+                "profile": "user",
+                "created_date": "2018-01-04 13:09:03.568749",
+                "created_by": "1"
+              },
+              "groups": [
+                "user"
+              ],
+              "could not add": [],
+              "message": "user created"
+            }
+
++ Response 401 (application/json)
+
+            {"message":"Unauthorized"}
+
+
+## Individual user settings [/user/{id}]
+Access a user's authorization and identification information
++ parameters
+  + id: 1 (required, string) - The user ID
+
+### Get user info [GET]
+Retrieves all information from a specific registered user
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+              "user": {
+                "created_by": "0",
+                "created_date": "2018-01-03 12:49:25.717374",
+                "email": "admin@noemail.com",
+                "id": "1",
+                "name": "Admin (superuser)",
+                "profile": "admin",
+                "service": "admin",
+                "username": "admin"
+              }
+            }
+
++ Response 401 (application/json)
+
+            {"message":"Unauthorized"}
+
++ Response 404 (application/json)
+
+            {
+              "message": "No user found with this ID",
+              "status": 404
+            }
+
+
+### Update user info [PUT]
+Replaces user information. Fields or attributes that are not informed will revert to their defaults.
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
+  + Body
+
+            {
+                "username": "test",
+                "service": "test",
+                "email": "test@noemail.com",
+                "name": "test",
+                "profile": "user"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "message": "ok",
+                "status": 200
+            }
+
++ Response 401 (application/json)
+
+            {"message":"Unauthorized"}
+
++ Response 404 (application/json)
+
+            {
+                "message": "Unknown user id",
+                "status": 404
+            }
+
+### Remove user [DELETE]
+Removes a user from the system
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+                "message": "User removed",
+                "status": 200
+            }
+
++ Response 401 (application/json)
+
+            {"message":"Unauthorized"}
+
++ Response 404 (application/json)
+
+            {
+                "message": "User was not found",
+                "status": 200
+            }
+
+## List tenant services [/admin/tenants]
+List all known tenants in dojot
+
+This is an internal call used for debugging, and for service initialization procedure. Hence only
+calls issued from within the platform will be accepted.
+
+### List tenants [GET]
+List all tenants currently configured in dojot
+
++ Response 200 (application/json)
+
+            {
+              "tenants": [
+                "admin",
+                "test"
+              ]
+            }
