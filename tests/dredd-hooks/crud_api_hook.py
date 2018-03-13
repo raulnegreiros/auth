@@ -70,7 +70,18 @@ def create_sample_groups(transaction):
 
     group = {
         "name": "common",
-        "description": "Group for users"
+        "description": "Group for common users"
+    }
+
+    try:
+        results = crud.create_group(db.session, group, requester)
+        print(f"Results are: {results.safe_dict()}")
+    except HTTPRequestError as e:
+        print(f"Error: {e.message}")
+
+    group = {
+        "name": "user",
+        "description": "Group for common users"
     }
 
     try:

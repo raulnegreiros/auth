@@ -1,16 +1,12 @@
 version: '2.1'
 services:
 
-  auth-redis:
-    image: redis
-    restart: always
-
   auth:
     image: dredd-tests
     restart: "no"
     depends_on:
-      - "postgres"
-      - "auth-redis"
+      - postgres
+      - auth-redis
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,6 +17,12 @@ services:
       AUTH_CACHE_HOST: "auth-redis"
       AUTH_CACHE_NAME: "redis"
       RABBITMQ_HOST: "DISABLED"
+      KAFKA_HOST: "DISABLED"
+      AUTH_PASSWD_BLACKLIST: "./auth/password_blacklist.txt"
+
+  auth-redis:
+    image: redis
+    restart: always
 
   postgres:
     image: "postgres:9.4"

@@ -35,6 +35,7 @@ def load_password_blacklist():
         LOGGER.info('Loading pre-compiled password blacklist...')
         password_blackList = Trie()
         password_blackList.load('compiledPwdBlacklist.bin')
+        LOGGER.info('... pre-compiled password blacklist was loaded.')
 
     else:
         try:

@@ -3,11 +3,20 @@ import json
 import controller.CRUDController as crud
 from database.flaskAlchemyInit import db
 from database.flaskAlchemyInit import HTTPRequestError
+from crud_api_hook import create_sample_groups
+
+
+@hooks.before("Auth > Known users manipulation > Register a new user")
+def create_groups_for_user(transaction):
+    create_sample_groups(transaction)
 
 
 @hooks.before("Auth > Session management > Create session")
 @hooks.before("Auth > Known users manipulation > List known users")
 def create_sample_users(transaction):
+
+    create_sample_groups(transaction)
+
     user = {
         "name": "admin",
         "username": "admin",

@@ -12,11 +12,11 @@ def add_user_group(db_session, user, group, requester):
     try:
         user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
-        raise HTTPRequestError(404, "No user found with this ID or name")
+        raise HTTPRequestError(404, f"No user found with this ID or name: {user}")
     try:
         group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
-        raise HTTPRequestError(404, "No group found with this ID or name")
+        raise HTTPRequestError(404, f"No group found with this ID or name: {group}")
 
     if db_session.query(UserGroup).filter_by(
                                                 user_id=user.id,
