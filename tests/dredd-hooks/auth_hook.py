@@ -12,10 +12,9 @@ def create_groups_for_user(transaction):
 
 
 @hooks.before("Auth > Session management > Create session")
-@hooks.before("Auth > Known users manipulation > List known users")
 def create_sample_users(transaction):
 
-    create_sample_groups(transaction)
+    group_id = create_sample_groups(transaction)
 
     user = {
         "name": "admin",
@@ -29,11 +28,11 @@ def create_sample_users(transaction):
         "username": "dredd"
     }
 
-    user_id = 0
+    user_id = []
 
     try:
         results = crud.create_user(db.session, user, requester)
-        user_id = results["user"]["id"]
+        user_id.append(results["user"]["id"])
         print(f"Results are: {results}")
     except HTTPRequestError as e:
         print(f"Error: {e.message}")
@@ -48,11 +47,11 @@ def create_sample_users(transaction):
 
     try:
         results = crud.create_user(db.session, user, requester)
+        user_id.append(results["user"]["id"])
         print(f"Results are: {results}")
     except HTTPRequestError as e:
         print(f"Error: {e.message}")
-    return user_id
-
+    return user_id, group_id
 
 @hooks.before("Auth > Session management > Create session")
 def change_user_password(transaction):
@@ -61,11 +60,12 @@ def change_user_password(transaction):
     transaction['request']['body'] = json.dumps(body)
 
 
+@hooks.before("Auth > Known users manipulation > List known users")
 @hooks.before("Auth > Individual user settings > Get user info")
 @hooks.before("Auth > Individual user settings > Update user info")
 @hooks.before("Auth > Individual user settings > Remove user")
 def change_user_id(transaction):
-    user_id = create_sample_users(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace('1', f'{user_id}')
+    user_id, group_id = create_sample_users(transaction)
+    transaction['fullPath'] = transaction['fullPath'].replace('1', f'{user_id[0]}')
 
 

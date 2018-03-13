@@ -478,7 +478,7 @@ def create_group(db_session, group_data, requester):
     check_group(group_data)
 
     if db_session.query(Group.name).filter_by(name=group_data['name']).one_or_none():
-        raise HTTPRequestError(400, "fGroup name {group_data['name']} is in use.")
+        raise HTTPRequestError(400, f"Group name {group_data['name']} is in use.")
 
     group_data['created_by'] = requester['userid']
     group = Group(**group_data)

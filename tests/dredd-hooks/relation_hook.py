@@ -21,11 +21,10 @@ REQUESTER = {
               "> Add user to group")
 def create_sample_group_user(transaction):
     global USER_GROUP
-    user_id = auth.create_sample_users(transaction)
-    group_id = crud.create_sample_groups(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id}/")
-    transaction['fullPath'] = transaction['fullPath'].replace("/101", f"/{group_id}")
-    USER_GROUP.append((user_id, group_id))
+    user_id, group_id = auth.create_sample_users(transaction)
+    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id[0]}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/101", f"/{group_id[2]}")
+    USER_GROUP.append((user_id[0], group_id[2]))
 
 
 @hooks.before("Relationship management "
@@ -33,12 +32,11 @@ def create_sample_group_user(transaction):
               "> Remove a user from group")
 def create_sample_associated_group_user(transaction):
     global USER_GROUP, REQUESTER
-    user_id = auth.create_sample_users(transaction)
-    group_id = crud.create_sample_groups(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id}/")
-    transaction['fullPath'] = transaction['fullPath'].replace("/101", f"/{group_id}")
-    rship.add_user_group(db.session, user_id, group_id, REQUESTER)
-    USER_GROUP.append((user_id, group_id))
+    user_id, group_id = auth.create_sample_users(transaction)
+    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id[0]}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/101", f"/{group_id[2]}")
+    rship.add_user_group(db.session, user_id[0], group_id[2], REQUESTER)
+    USER_GROUP.append((user_id[0], group_id[1]))
 
 
 @hooks.before("Relationship management "
@@ -46,11 +44,11 @@ def create_sample_associated_group_user(transaction):
               "> Give a permission to a user")
 def create_sample_user_perm(transaction):
     global USER_PERMS
-    user_id = auth.create_sample_users(transaction)
+    user_id, group_id = auth.create_sample_users(transaction)
     perm_id = crud.create_sample_perms(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id[0]}/")
     transaction['fullPath'] = transaction['fullPath'].replace("/201", f"/{perm_id}")
-    USER_PERMS.append((user_id, perm_id))
+    USER_PERMS.append((user_id[0], perm_id))
 
 
 @hooks.before("Relationship management "
@@ -58,12 +56,12 @@ def create_sample_user_perm(transaction):
               "> Revoke a user permission")
 def create_sample_associated_user_perm(transaction):
     global USER_PERMS, REQUESTER
-    user_id = auth.create_sample_users(transaction)
+    user_id, group_id = auth.create_sample_users(transaction)
     perm_id = crud.create_sample_perms(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/1/", f"/{user_id[0]}/")
     transaction['fullPath'] = transaction['fullPath'].replace("/201", f"/{perm_id}")
-    rship.add_user_permission(db.session, user_id, perm_id, REQUESTER)
-    USER_PERMS.append((user_id, perm_id))
+    rship.add_user_permission(db.session, user_id[0], perm_id, REQUESTER)
+    USER_PERMS.append((user_id[0], perm_id))
 
 
 @hooks.before("Relationship management "
@@ -73,11 +71,9 @@ def create_sample_group_perm(transaction):
     global GROUP_PERMS
     perm_id = crud.create_sample_perms(transaction)
     group_id = crud.create_sample_groups(transaction)
-    log().info(f"Old full path {transaction['fullPath']}")
-    transaction['fullPath'] = transaction['fullPath'].replace("/101/", f"/{group_id}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/101/", f"/{group_id[0]}/")
     transaction['fullPath'] = transaction['fullPath'].replace("/201", f"/{perm_id}")
-    log().info(f"New full path {transaction['fullPath']}")
-    GROUP_PERMS.append((group_id, perm_id))
+    GROUP_PERMS.append((group_id[0], perm_id))
 
 
 @hooks.before("Relationship management "
@@ -87,10 +83,10 @@ def create_sample_associated_group_perm(transaction):
     global GROUP_PERMS
     perm_id = crud.create_sample_perms(transaction)
     group_id = crud.create_sample_groups(transaction)
-    transaction['fullPath'] = transaction['fullPath'].replace("/101/", f"/{group_id}/")
+    transaction['fullPath'] = transaction['fullPath'].replace("/101/", f"/{group_id[0]}/")
     transaction['fullPath'] = transaction['fullPath'].replace("/201", f"/{perm_id}")
-    rship.add_group_permission(db.session, group_id, perm_id, REQUESTER)
-    GROUP_PERMS.append((group_id, perm_id))
+    rship.add_group_permission(db.session, group_id[0], perm_id, REQUESTER)
+    GROUP_PERMS.append((group_id[0], perm_id))
 
 
 @hooks.after("Relationship management "

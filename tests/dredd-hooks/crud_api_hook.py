@@ -60,10 +60,10 @@ def create_sample_groups(transaction):
         "description": "admin"
     }
 
-    group_id = 0
+    group_id = []
     try:
         results = crud.create_group(db.session, group, requester)
-        group_id = results.id
+        group_id.append(results.id)
         print(f"Results are: {results.safe_dict()}")
     except HTTPRequestError as e:
         print(f"Error: {e.message}")
@@ -75,6 +75,7 @@ def create_sample_groups(transaction):
 
     try:
         results = crud.create_group(db.session, group, requester)
+        group_id.append(results.id)
         print(f"Results are: {results.safe_dict()}")
     except HTTPRequestError as e:
         print(f"Error: {e.message}")
@@ -86,6 +87,7 @@ def create_sample_groups(transaction):
 
     try:
         results = crud.create_group(db.session, group, requester)
+        group_id.append(results.id)
         print(f"Results are: {results.safe_dict()}")
     except HTTPRequestError as e:
         print(f"Error: {e.message}")
@@ -98,4 +100,4 @@ def create_sample_groups(transaction):
 @hooks.before("CRUD Permissions and Group > Group management > Remove a group")
 def create_sample_groups_with_reference(transaction):
     group_id = create_sample_groups(transaction)
-    transaction["fullPath"] = transaction["fullPath"].replace("1", f"{group_id}")
+    transaction["fullPath"] = transaction["fullPath"].replace("1", f"{group_id[0]}")
