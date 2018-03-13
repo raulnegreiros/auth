@@ -6,7 +6,7 @@ services:
     restart: always
 
   auth:
-    image: auth-dredd
+    image: dredd-tests
     restart: "no"
     depends_on:
       - "postgres"
@@ -20,6 +20,7 @@ services:
       AUTH_KONG_URL: "DISABLED"
       AUTH_CACHE_HOST: "auth-redis"
       AUTH_CACHE_NAME: "redis"
+      RABBITMQ_HOST: "DISABLED"
 
   postgres:
     image: "postgres:9.4"

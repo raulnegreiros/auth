@@ -6,6 +6,7 @@
 # most of the input validation is done on the controllers
 
 from flask import request
+from flask import jsonify
 import json
 
 import auth.conf as conf
@@ -25,8 +26,11 @@ from utils.serialization import json_serial
 from alarmlibrary.connection import RabbitMqClientConnection
 from alarmlibrary.alarm import Alarm, AlarmSeverity
 
-rabbit_client = RabbitMqClientConnection()
-rabbit_client.open(conf.rabbitmq_host)
+if conf.rabbitmq_host != "DISABLED":
+    rabbit_client = RabbitMqClientConnection()
+    rabbit_client.open(conf.rabbitmq_host)
+else:
+    rabbit_client = None
 
 def publish_alarm(err):
     """
@@ -48,7 +52,8 @@ def publish_alarm(err):
         alarm.add_additional_data("username", "Mario")
         if err.errorCode == 400:
             alarm.add_additional_data("userid", "1")
-        rabbit_client.send(alarm)
+        if rabbit_client is not None:
+            rabbit_client.send(alarm)
 
 # Authentication endpoint
 @app.route('/', methods=['POST'])
@@ -70,7 +75,7 @@ def create_user():
         user = load_json_from_request(request)
 
         result = crud.create_user(db.session, user, requester)
-        return make_response(json.dumps(result), 200)
+        return jsonify(result, 200)
 
     except HTTPRequestError as err:
         publish_alarm(err)

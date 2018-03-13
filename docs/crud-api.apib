@@ -9,9 +9,9 @@ Endpoints to perform permissions, groups and profiles management
 ## Permissions creation and search [/pap/permission]
 
 ### Create a new permission [POST]
-Notice that regular expressions can be used on the 'path' and 'method' fields. Also notice
-that all slashes that serves to escape some characters ('*', in the example) must be
-escaped.
+Notice that regular expressions can be used on the 'path' and 'method' fields,
+and all slashes that serve to escape some characters ('*', in the example) must
+also be escaped
 
 + Request (application/json)
     + Headers
@@ -34,7 +34,7 @@ escaped.
                 "id": 131
             }
 
-### Search permission [GET /pap/permission?path={path}&method={method}&permission={permission}]
+### Search permission [GET /pap/permission?{path,method,permission}]
 
 + Parameters
     + path: \/devices\/info (optional, string) - a path string.

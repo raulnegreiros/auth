@@ -18,7 +18,7 @@ def wait_for_db(db_args):
             cursor.execute("select true from pg_database where datname = '%s';" % config.dbName)
             if len(cursor.fetchall()) == 0:
                 print("will attempt to create database")
-                cursor.execute("CREATE database %s;" % config.dbNname)
+                cursor.execute("CREATE database %s;" % config.dbName)
             print("Ready to go")
             exit(0)
         except psycopg2.Error as e:

@@ -54,7 +54,7 @@ load_password_blacklist()
 
 
 # check if a password is obvious weak
-# throws a exception if the password fail a tests
+# throws a exception if the password fail a test
 def check_password_format(user, password):
     password_len = len(password)
     if password_len < conf.passwdMinLen:

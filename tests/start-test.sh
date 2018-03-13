@@ -7,12 +7,6 @@ echo Running waitForDb
 python3 ./tests/waitForDb.py
 echo waitForDb ok
 
-echo Running appLock.py
-# wait for database
-python3 ./appLock.py --sleep 10 --max_retries 3
-rc=$?; if [[ ${rc} != 0 ]]; then exit ${rc}; fi
-echo appLock.py ok
-
 cd auth
 
 echo Creating model databases

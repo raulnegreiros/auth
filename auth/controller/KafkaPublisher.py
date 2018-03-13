@@ -69,7 +69,7 @@ def init():
         kf_prod = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'),
                                 bootstrap_servers=conf.kafka_host)
     except NoBrokersAvailable as e:
-        LOGGER.error('No kafka brokers are available. This is not fatal, but nothing will work as expected.')
+        LOGGER.error('No kafka brokers are available. No device event will be published.')
         LOGGER.error('Full exception is:')
         LOGGER.error('{}'.format(e))
 
