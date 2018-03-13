@@ -6,11 +6,13 @@ import os
 from pbkdf2 import crypt
 
 from sqlalchemy import exc as sqlalchemy_exceptions
+import psycopg2
 
 from database.flaskAlchemyInit import db
 from database.Models import Permission, User, Group, PermissionEnum
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.Models import MVUserPermission, MVGroupPermission
+import conf as CONFIG
 
 import kongUtils as kong
 
@@ -190,5 +192,27 @@ def populate():
     db.session.commit()
     print("Success")
 
+def create_database():
+    connection = None
 
+    try:
+        connection = psycopg2.connect(user=CONFIG.dbUser, password=CONFIG.dbPdw, host=CONFIG.dbHost)
+        print ("postgres ok")
+    except Exception as e:
+        print("Failed to connect to database")
+        exit(1)
+
+    if CONFIG.createDatabase:
+        connection.autocommit = True
+        cursor = connection.cursor()
+        cursor.execute("select true from pg_database where datname = '%s';" % CONFIG.dbName)
+        if len(cursor.fetchall()) == 0:
+            print("will attempt to create database")
+            cursor.execute("CREATE database %s;" % CONFIG.dbName)
+            print("creating schema")
+            db.create_all()
+        else:
+            print("Database already exists")
+
+create_database()
 populate()
