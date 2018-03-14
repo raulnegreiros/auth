@@ -187,7 +187,7 @@ else:
     GIT_BRANCH = ''
 
 rst_epilog = """
-    .. _Github pages API description: https://dojot.github.io/{0}/apis_{1}.html
+    .. _Github pages API description: https://dojot.github.io/{0}/apiary_{1}.html
 """.format(project, GIT_BRANCH)
 
 def setup(app):
