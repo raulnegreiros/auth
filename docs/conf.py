@@ -16,7 +16,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -181,6 +181,10 @@ locale_dirs = ['locale/']  # path is example but recommended
 
 numfig = True
 
+GIT_BRANCH = os.environ['TRAVIS_BRANCH']
+rst_epilog = """
+    .. _Github pages API description: https://dojot.github.io/auth/apis_{0}.html
+""".format(GIT_BRANCH)
 
 def setup(app):
     app.add_stylesheet('css/theme_overrides.css')

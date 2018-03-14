@@ -9,6 +9,4 @@ automatically generated from these files:
 * :download:`Relations <relation.apib>`
 * :download:`Report <report.apib>`
 
-All APIs are available `here`_.
-
-.. _here: https://dojot.github.io/auth/apis-master.html
+All APIs are available in `Github pages API description`_
