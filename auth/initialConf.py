@@ -10,9 +10,9 @@ from sqlalchemy import exc as sqlalchemy_exceptions
 import psycopg2
 
 from database.flaskAlchemyInit import db
-from database.Models import Permission, User, Group, PermissionEnum
-from database.Models import UserPermission, GroupPermission, UserGroup
-from database.Models import MVUserPermission, MVGroupPermission
+from database.Models import *
+from database.historicModels import *
+from database.materialized_view_factory import *
 import conf as CONFIG
 
 import kongUtils as kong
