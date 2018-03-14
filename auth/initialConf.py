@@ -3,6 +3,7 @@
 
 import binascii
 import os
+from time import sleep
 from pbkdf2 import crypt
 
 from sqlalchemy import exc as sqlalchemy_exceptions
@@ -202,14 +203,23 @@ def populate():
     db.session.commit()
     print("Success")
 
-def create_database():
+def create_database(num_retries=10, interval=3):
     connection = None
 
-    try:
-        connection = psycopg2.connect(user=CONFIG.dbUser, password=CONFIG.dbPdw, host=CONFIG.dbHost)
-        print ("postgres ok")
-    except Exception as e:
-        print("Failed to connect to database")
+    attempt = 0
+    while attempt < num_retries:
+        try:
+            connection = psycopg2.connect(user=CONFIG.dbUser, password=CONFIG.dbPdw, host=CONFIG.dbHost)
+            print ("postgres ok")
+            break
+        except Exception as e:
+            print("Failed to connect to database")
+        
+        attempt += 1
+        sleep(interval)
+    
+    if connection is None:
+        print("Database took too long to boot. Giving up.")
         exit(1)
 
     if CONFIG.createDatabase:
