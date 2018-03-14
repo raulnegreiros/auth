@@ -187,8 +187,8 @@ else:
     GIT_BRANCH = ''
 
 rst_epilog = """
-    .. _Github pages API description: https://dojot.github.io/auth/apis_{0}.html
-""".format(GIT_BRANCH)
+    .. _Github pages API description: https://dojot.github.io/{0}/apis_{1}.html
+""".format(project, GIT_BRANCH)
 
 def setup(app):
     app.add_stylesheet('css/theme_overrides.css')
