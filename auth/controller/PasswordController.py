@@ -35,6 +35,7 @@ def load_password_blacklist():
         LOGGER.info('Loading pre-compiled password blacklist...')
         password_blackList = Trie()
         password_blackList.load('compiledPwdBlacklist.bin')
+        LOGGER.info('... pre-compiled password blacklist was loaded.')
 
     else:
         try:
@@ -196,7 +197,7 @@ def reset_password(db_session, link, reset_data):
         reset_request = db_session.query(PasswordRequest). \
             filter_by(link=link).one()
         if check_request_validity(db_session, reset_request):
-            user = User.getByNameOrID(reset_request.user_id)
+            user = User.get_by_name_or_id(reset_request.user_id)
             user.salt, user.hash = update(db_session, user, reset_data['passwd'])
 
             # remove this used reset request

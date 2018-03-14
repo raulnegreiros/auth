@@ -6,8 +6,25 @@ Endpoints to manage relationships between groups, profiles, users and permission
 
 # Group Relationship management
 
-## Manage relationships between users and groups  [/pap/usergroup/<userid>/<groupid>]
+## Manage relationships between users and groups  [/pap/usergroup/{user_id}/{group_id}]
++ Parameters
+    + user_id: 1 (required, string) - The user ID
+    + group_id: 101 (required, string) - The group ID
+
 ### Add user to group [POST]
+
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
 
 + Response 404 (application/json)
 
@@ -24,14 +41,20 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "No group found with this ID"
             }
 
+
+### Remove a user from group [DELETE]
+
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
 + Response 200 (application/json)
 
             {
                 "status": 200,
                 "message": "ok"
             }
-
-### Remove a user from group [DELETE]
 
 + Response 404 (application/json)
 
@@ -54,16 +77,25 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "Can't remove user. A user must always be in one role group"
             }
 
+
+## Manage relationships between users and permissions  [/pap/userpermissions/{user_id}/{permission_id}]
++ Parameters
+    + user_id: 1 (required, string) - The user ID
+    + permission_id: 201 (required, string) - The permission ID to be changed
+
+### Give a permission to a user [POST]
+
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
 + Response 200 (application/json)
 
             {
                 "status": 200,
                 "message": "ok"
             }
-
-
-## Manage relationships between users and permissions  [/pap/userpermissions/<userid>/<permissionid>]
-### Give a permission to a user [POST]
 
 + Response 404 (application/json)
 
@@ -79,15 +111,21 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "No permission found with this ID"
             }
 
-+ Response 200 (application/json)
-
-            {
-                "status": 200,
-                "message": "ok"
-            }
 
 ### Revoke a user permission [DELETE]
 
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
 + Response 404 (application/json)
 
             {
@@ -102,15 +140,25 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "No permission found with this ID"
             }
 
+
+## Manage relationships between group and permissions  [/pap/grouppermissions/{group_id}/{permission_id}]
++ Parameters
+    + group_id: 101 (required, string) - The group ID
+    + permission_id: 201 (required, string) - The permission ID to be changed
+
+### Give a permission to a group [POST]
+
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
 + Response 200 (application/json)
 
             {
                 "status": 200,
                 "message": "ok"
             }
-
-## Manage relationships between group and permissions  [/pap/grouppermissions/<groupid>/<permissionid>]
-### Give a permission to a group [POST]
 
 + Response 404 (application/json)
 
@@ -126,15 +174,21 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "No permission found with this ID"
             }
 
-+ Response 200 (application/json)
-
-            {
-                "status": 200,
-                "message": "ok"
-            }
 
 ### Revoke a group permission [DELETE]
 
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
 + Response 404 (application/json)
 
             {
@@ -149,9 +203,3 @@ Endpoints to manage relationships between groups, profiles, users and permission
                 "message": "No permission found with this ID"
             }
 
-+ Response 200 (application/json)
-
-            {
-                "status": 200,
-                "message": "ok"
-            }

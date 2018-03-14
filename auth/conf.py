@@ -84,7 +84,8 @@ if passwdMinLen < 6:
     passwdMinLen = 6
 
 # Where to publish tenancy information to
-kafka_host = 'kafka:9092'
+kafka_host = os.environ.get("KAFKA_HOST",
+                            'kafka:9092')
 # Global subject to use when publishing tenancy lifecycle events
 kafka_subject = 'dojot.tenancy'
 

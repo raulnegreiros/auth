@@ -8,7 +8,7 @@ from database.flaskAlchemyInit import HTTPRequestError
 
 def get_user_direct_permissions(db_session, user):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
     return user.permissions
@@ -16,7 +16,7 @@ def get_user_direct_permissions(db_session, user):
 
 def get_all_user_permissions(db_session, user):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
 
@@ -31,7 +31,7 @@ def get_all_user_permissions(db_session, user):
 
 def get_user_groups(db_session, user):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this username or ID")
     else:
@@ -40,7 +40,7 @@ def get_user_groups(db_session, user):
 
 def get_group_permissions(db_session, group):
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this name or ID")
     else:
@@ -49,7 +49,7 @@ def get_group_permissions(db_session, group):
 
 def get_group_users(db_session, group):
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this name or ID")
     else:

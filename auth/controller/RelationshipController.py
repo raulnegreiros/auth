@@ -5,17 +5,18 @@ from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
 import database.Cache as cache
 from database.flaskAlchemyInit import log
+from database.Models import MVUserPermission, MVGroupPermission
 
 
 def add_user_group(db_session, user, group, requester):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
-        raise HTTPRequestError(404, "No user found with this ID or name")
+        raise HTTPRequestError(404, f"No user found with this ID or name: {user}")
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
-        raise HTTPRequestError(404, "No group found with this ID or name")
+        raise HTTPRequestError(404, f"No group found with this ID or name: {group}")
 
     if db_session.query(UserGroup).filter_by(
                                                 user_id=user.id,
@@ -26,17 +27,18 @@ def add_user_group(db_session, user, group, requester):
     r = UserGroup(user_id=user.id, group_id=group.id)
     db_session.add(r)
     cache.delete_key(userid=user.id)
-    log().info('user ' + user.username + ' added to group ' + group.name
-               + ' by ' + requester['username'])
+    log().info(f"user {user.username} added to group {group.name} by {requester['username']}")
+
+    db_session.commit()
 
 
 def remove_user_group(db_session, user, group, requester):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID or name")
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID or name")
     try:
@@ -44,9 +46,9 @@ def remove_user_group(db_session, user, group, requester):
             .filter_by(user_id=user.id, group_id=group.id).one()
         db_session.delete(relation)
         cache.delete_key(userid=user.id)
-        log().info('user ' + user.username + ' removed from ' + group.name
-                   + ' by ' + requester['username'])
-    except sqlalchemy.orm.exc.NoResultFound:
+        log().info(f"user {user.username} removed from {group.name} by {requester['username']}")
+        db_session.commit()
+    except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "User is not a member of the group")
 
 
@@ -70,11 +72,11 @@ def add_user_many_groups(db_session, user, groups, requester):
 
 def add_group_permission(db_session, group, permission, requester):
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID or name")
     try:
-        perm = Permission.getByNameOrID(permission)
+        perm = Permission.get_by_name_or_id(permission)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID or name")
 
@@ -86,17 +88,18 @@ def add_group_permission(db_session, group, permission, requester):
     db_session.add(r)
     cache.delete_key(action=perm.method,
                      resource=perm.path)
-    log().info('permission ' + perm.name + ' added to group ' + group.name
-               + ' by ' + requester['username'])
+    log().info(f"permission {perm.name} added to group {group.name} by {requester['username']}")
+    MVGroupPermission.refresh()
+    db_session.commit()
 
 
 def remove_group_permission(db_session, group, permission, requester):
     try:
-        group = Group.getByNameOrID(group)
+        group = Group.get_by_name_or_id(group)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No group found with this ID or name")
     try:
-        perm = Permission.getByNameOrID(permission)
+        perm = Permission.get_by_name_or_id(permission)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
     try:
@@ -105,19 +108,20 @@ def remove_group_permission(db_session, group, permission, requester):
         db_session.delete(relation)
         cache.delete_key(action=perm.method,
                          resource=perm.path)
-        log().info('permission ' + perm.name + ' removed from '
-                   ' group ' + group.name + ' by ' + requester['username'])
+        log().info(f"permission {perm.name} removed from group {group.name} by {requester['username']}")
+        MVGroupPermission.refresh()
+        db_session.commit()
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "Group does not have this permission")
 
 
 def add_user_permission(db_session, user, permission, requester):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID or name")
     try:
-        perm = Permission.getByNameOrID(permission)
+        perm = Permission.get_by_name_or_id(permission)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
 
@@ -130,17 +134,18 @@ def add_user_permission(db_session, user, permission, requester):
     cache.delete_key(userid=user.id,
                      action=perm.method,
                      resource=perm.path)
-    log().info('user ' + user.username + ' received permission '
-               + perm.name + ' by ' + requester['username'])
+    MVUserPermission.refresh()
+    db_session.commit()
+    log().info(f"user {user.username} received permission {perm.name} by {requester['username']}")
 
 
 def remove_user_permission(db_session, user, permission, requester):
     try:
-        user = User.getByNameOrID(user)
+        user = User.get_by_name_or_id(user)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No user found with this ID or name")
     try:
-        perm = Permission.getByNameOrID(permission)
+        perm = Permission.get_by_name_or_id(permission)
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
     try:
@@ -150,7 +155,8 @@ def remove_user_permission(db_session, user, permission, requester):
         cache.delete_key(userid=user.id,
                          action=perm.method,
                          resource=perm.path)
-        log().info('user ' + user.username + ' removed permission '
-                   + perm.name + ' by ' + requester['username'])
+        log().info(f"permission {perm.name} for user {user.username} was revoked by {requester['username']}")
+        MVUserPermission.refresh()
+        db_session.commit()
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "User does not have this permission")

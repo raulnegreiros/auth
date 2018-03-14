@@ -23,6 +23,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 
 # create a logger for our application
+print("dbconf: {}".format(json.dumps(dbconf.dbName)))
 if dbconf.logMode == 'STDOUT':
     streamLogger = logging.StreamHandler()
     streamLogger.setFormatter(formatter)

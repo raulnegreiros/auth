@@ -7,16 +7,24 @@ Endpoints to perform permissions, groups and profiles management
 # Group CRUD Permissions and Group
 
 ## Permissions creation and search [/pap/permission]
+
 ### Create a new permission [POST]
-notice that regular expressions can be used on the 'path' and 'method' fields.
+Notice that regular expressions can be used on the 'path' and 'method' fields,
+and all slashes that serve to escape some characters ('*', in the example) must
+also be escaped
 
 + Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
     + Body
 
             {
-                "path" : "/devices/info/\*",
+                "path" : "/devices/info/\\*",
                 "method" : "POST|PUT|DELETE",
-                "permission" : "permit"
+                "permission" : "permit",
+                "name": "device_write_operations"
             }
 
 + Response 200 (application/json)
@@ -29,9 +37,27 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
 ### Search permission [GET /pap/permission?{path,method,permission}]
 
 + Parameters
-    + path: `"/devices/info/\*` (optional, string) - a path string.
-    + method: `POST` (optional, enum) - one HTTP method.
-    + permission: `permit` (optional, enum) - "permit" or "deny".
+    + path: \/devices\/info (optional, string) - a path string.
+    + method: POST (optional, enum) - one HTTP method.
+    + permission: permit (optional, enum) - "permit" or "deny".
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+ 
+            {
+                "permissions": [
+                    {
+                            "id" : 131,
+                            "path" : "/devices/info/\\*",
+                            "method" : "POST|PUT|DELETE",
+                            "permission" : "permit"
+                    }
+                ]
+            }
 
 + Response 404 (application/json)
 
@@ -40,27 +66,28 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "message": "No permission found with these filters"
             }
 
+
+## Permissions management [/pap/permission/{id}]
++ Parameters
+    + id: 1 (required, integer) - The permission ID
+
+### Get a permission [GET]
+
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
 + Response 200 (application/json)
- 
+
             {
-                "permissions": [
-                    {
-                            "id" : 131,
-                            "path" : "/devices/info/\*",
-                            "method" : "POST|PUT|DELETE",
-                            "permission" : "permit"
-                    },
-                    {
-                            "id" : 132,
-                            "path" : "/auth/user",
-                            "method" : "\*",
-                            "permission" : "deny"
-                    }
-                ]
+                "id" : 131,
+                "path" : "/devices/info/\\*",
+                "method" : "POST|PUT|DELETE",
+                "permission" : "permit"
             }
 
-## Permissions management [/pap/permission/<id>]
-### Get a permission [GET]
+
 + Response 404 (application/json)
 
             {
@@ -68,23 +95,27 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "message": "No permission found with this ID"
             }
 
-+ Response 200 (application/json)
-
-            {
-                "id" : 131,
-                "path" : "/devices/info/\*",
-                "method" : "POST|PUT|DELETE",
-                "permission" : "permit"
-            }
 
 ### Update a permission [PUT]
 + Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
     + Body
 
             {
-                "path" : "/devices/info/\*",
+                "path" : "/devices/info/\\*",
                 "method" : "POST|PUT|DELETE",
-                "permission" : "permit"
+                "permission" : "permit",
+                "name": "sample_permission"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
             }
 
 + Response 404 (application/json)
@@ -94,44 +125,40 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "message": "No permission with found this ID"
             }
 
-+ Response 200 (application/json)
+### Remove a permission [DELETE]
 
++ Request
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+    
             {
                 "status": 200,
                 "message": "ok"
             }
 
-### Remove a permission [DELETE]
 + Response 404 (application/json)
-    
+
             {
                 "status": 404,
                 "message": "No permission found with this ID"
-            }
-
-+ Response 200 (application/json)
-    
-            {
-                "status": 200,
-                "message": "ok"
             }
 
 ## Group creation [/pap/group]
 ### Create a new group [POST]
 
 + Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
     + Body
 
             {
                 "name" : "group1",
                 "description" : "a fine group"
-            }
-
-+ Response 404 (application/json)
-    
-            {
-                "status": 404,
-                "message": "Group named group1 already exists"
             }
 
 + Response 200 (application/json)
@@ -141,18 +168,18 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "id": 3
             }
 
-
-### Search Groups [GET /pap/group?{name}]
-
-+ Parameters
-    + name: `admin` (optional, string) - a group name, or part of a group name.
-
 + Response 404 (application/json)
-    
+
             {
                 "status": 404,
-                "message": "No group found with these filters"
+                "message": "Group named group1 already exists"
             }
+
+
+### Search Groups [GET /pap/group?name={name}]
+
++ Parameters
+    + name: admin (optional, string) - a group name, or part of a group name.
 
 + Response 200 (application/json)
             
@@ -162,38 +189,60 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                         "id" : 3,
                         "name" : "admin",
                         "description" : "Full privilege group"
-                    },
-                    {
-                        "id" : 4,
-                        "name" : "projectN"
-                        "description" : null
                     }
                 ]
             }
 
-## Group management [/pap/group/<id>]
-### Get a group [GET]
 + Response 404 (application/json)
-    
+
             {
                 "status": 404,
-                "message": "No group found with this ID"
+                "message": "No group found with these filters"
             }
 
+
+## Group management [/pap/group/{id}]
+
++ Parameters
+
+    + id: 1 (required, integer) - group ID
+
+### Get a group [GET]
+
 + Response 200 (application/json)
-        
+
             {
                 "id" : 3,
                 "name" : "group1",
                 "description" : null
             }
 
++ Response 404 (application/json)
+    
+            {
+                "status": 404,
+                "message": "No group found with this ID"
+            }
+
 ### Update a group [PUT]
+
 + Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
     + Body
     
             {
-                "name" : "projectX"
+                "name": "admin",
+                "description" : "projectX"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
             }
 
 + Response 404 (application/json)
@@ -203,14 +252,20 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "message": "No group found with this ID"
             }
 
-+ Response 200 (application/json)
-
-            {
-                "status": 200,
-                "message": "ok"
-            }
 
 ### Remove a group [DELETE]
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "message": "ok"
+            }
+
 + Response 404 (application/json)
 
             {
@@ -218,9 +273,3 @@ notice that regular expressions can be used on the 'path' and 'method' fields.
                 "message": "No group found with this ID"
             }
 
-+ Response 200 (application/json)
-    
-            {
-                "status": 200,
-                "message": "ok"
-            }

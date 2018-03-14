@@ -6,6 +6,7 @@
 # most of the input validation is done on the controllers
 
 from flask import request
+from flask import jsonify
 import json
 
 import auth.conf as conf
@@ -18,18 +19,18 @@ import controller.PasswordController as pwdc
 import auth.kongUtils as kong
 from database.flaskAlchemyInit import app, db, format_response, \
     HTTPRequestError, make_response, load_json_from_request
-from database.Models import MVUserPermission, MVGroupPermission
 import database.Cache as cache
 
 from utils.serialization import json_serial
-from database.flaskAlchemyInit import log
-from controller.KafkaPublisher import send_notification
 
 from alarmlibrary.connection import RabbitMqClientConnection
 from alarmlibrary.alarm import Alarm, AlarmSeverity
 
-rabbit_client = RabbitMqClientConnection()
-rabbit_client.open(conf.rabbitmq_host)
+if conf.rabbitmq_host != "DISABLED":
+    rabbit_client = RabbitMqClientConnection()
+    rabbit_client.open(conf.rabbitmq_host)
+else:
+    rabbit_client = None
 
 def publish_alarm(err):
     """
@@ -51,7 +52,8 @@ def publish_alarm(err):
         alarm.add_additional_data("username", "Mario")
         if err.errorCode == 400:
             alarm.add_additional_data("userid", "1")
-        rabbit_client.send(alarm)
+        if rabbit_client is not None:
+            rabbit_client.send(alarm)
 
 # Authentication endpoint
 @app.route('/', methods=['POST'])
@@ -70,42 +72,11 @@ def authenticate():
 def create_user():
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        auth_data = load_json_from_request(request)
+        user = load_json_from_request(request)
 
-        # Create user
-        new_user = crud.create_user(db.session, auth_data, requester)
+        result = crud.create_user(db.session, user, requester)
+        return jsonify(result, 200)
 
-        # If no problems occur to create user (no exceptions), configure kong
-        kong_data = kong.configure_kong(new_user.username)
-        if kong_data is None:
-            return format_response(500, 'failed to configure verification subsystem')
-        new_user.secret = kong_data['secret']
-        new_user.key = kong_data['key']
-        new_user.kongId = kong_data['kongid']
-
-        db.session.add(new_user)
-        db.session.commit()
-        group_success = []
-        group_failed = []
-        if 'profile' in auth_data.keys():
-            group_success, group_failed = rship. \
-                add_user_many_groups(db.session, new_user.id,
-                                     auth_data['profile'], requester)
-        db.session.commit()
-        if conf.emailHost != 'NOEMAIL':
-            pwdc.create_password_set_request(db.session, new_user)
-            db.session.commit()
-
-        if crud.count_tenant_users(db.session, new_user.service) == 1:
-            log().info("will emit tenant lifecycle event {} - CREATE".format(new_user.service))
-            send_notification({"type": 'CREATE', 'tenant': new_user.service})
-
-        return make_response(json.dumps({
-            "user": new_user.safeDict(),
-            "groups": group_success,
-            "could not add": group_failed,
-            "message": "user created"
-        }, default=json_serial), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
@@ -119,7 +90,7 @@ def list_users():
             # Optional search filters
             request.args['username'] if 'username' in request.args else None
         )
-        users_safe = list(map(lambda u: u.safeDict(), users))
+        users_safe = list(map(lambda u: u.safe_dict(), users))
         return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -130,38 +101,18 @@ def list_users():
 def get_user(user):
     try:
         user = crud.get_user(db.session, user)
-        return make_response(json.dumps({"user": user.safeDict()}, default=json_serial), 200)
+        return make_response(json.dumps({"user": user.safe_dict()}, default=json_serial), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
-@app.route('/user/<user>', methods=['PUT'])
-def update_user(user):
+@app.route('/user/<user_id>', methods=['PUT'])
+def update_user(user_id):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        auth_data = load_json_from_request(request)
-        updated_user, old_service = crud.update_user(db.session, user, auth_data, requester)
-
-        # Create a new kong secret and delete the old one
-        kong_data = kong.configure_kong(updated_user.username)
-        if kong_data is None:
-            return format_response(500, 'failed to configure verification subsystem')
-
-        kong.revoke_kong_secret(updated_user.username, updated_user.kongId)
-        updated_user.secret = kong_data['secret']
-        updated_user.key = kong_data['key']
-        updated_user.kongid = kong_data['kongid']
-        db.session.add(updated_user)
-        db.session.commit()
-
-        if crud.count_tenant_users(db.session, old_service) == 0:
-            log().info("will emit tenant lifecycle event {} - DELETE".format(old_service))
-            send_notification({"type": 'DELETE', 'tenant': old_service})
-
-        if crud.count_tenant_users(db.session, updated_user.service) == 1:
-            log().info("will emit tenant lifecycle event {} - CREATE".format(updated_user.service))
-            send_notification({"type": 'CREATE', 'tenant': updated_user.service})
+        user = load_json_from_request(request)
+        crud.update_user(db.session, user_id, user, requester)
         return format_response(200)
 
     except HTTPRequestError as err:
@@ -173,17 +124,7 @@ def update_user(user):
 def remove_user(user):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        old_username = crud.get_user(db.session, user).username
-        old_user = crud.delete_user(db.session, user, requester)
-        kong.remove_from_kong(old_username)
-        MVUserPermission.refresh()
-        MVGroupPermission.refresh()
-        db.session.commit()
-
-        if crud.count_tenant_users(db.session, old_user.service) == 0:
-            log().info("will emit tenant lifecycle event {} - DELETE".format(old_user.service))
-            send_notification({"type": 'DELETE', 'tenant': old_user.service})
-
+        crud.delete_user(db.session, user, requester)
         return format_response(200, "User removed")
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -197,68 +138,61 @@ def create_permission():
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         perm_data = load_json_from_request(request)
         new_perm = crud.create_perm(db.session, perm_data, requester)
-        db.session.add(new_perm)
-        db.session.commit()
         return make_response(json.dumps({
             "status": 200,
             "id": new_perm.id
-        }, default=json_serial), 200)
+        }), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
+        print(f"Error: {err}")
         return format_response(err.errorCode, err.message)
 
 
 @app.route('/pap/permission', methods=['GET'])
 def list_permissions():
     try:
-        permissions = crud.search_perm(
+        perms = crud.search_perm(
             db.session,
-
             # search filters
             request.args['path'] if 'path' in request.args else None,
             request.args['method'] if 'method' in request.args else None,
             request.args['permission']
             if 'permission' in request.args else None
         )
-        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        permissions_safe = list(map(lambda p: p.safe_dict(), perms))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
-@app.route('/pap/permission/<permid>', methods=['GET'])
-def get_permission(permid):
+@app.route('/pap/permission/<perm_id>', methods=['GET'])
+def get_permission(perm_id):
     try:
-        perm = crud.get_perm(db.session, permid)
-        return make_response(json.dumps(perm.safeDict(), default=json_serial), 200)
+        perm = crud.get_perm(db.session, perm_id)
+        return make_response(json.dumps(perm.safe_dict(), default=json_serial), 200)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
-@app.route('/pap/permission/<permid>', methods=['PUT'])
-def update_permission(permid):
+@app.route('/pap/permission/<perm_id>', methods=['PUT'])
+def update_permission(perm_id):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         perm_data = load_json_from_request(request)
-        crud.update_perm(db.session, permid, perm_data, requester)
-        db.session.commit()
+        crud.update_perm(db.session, perm_id, perm_data, requester)
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
-@app.route('/pap/permission/<permid>', methods=['DELETE'])
-def delete_permission(permid):
+@app.route('/pap/permission/<perm_id>', methods=['DELETE'])
+def delete_permission(perm_id):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
-        crud.get_perm(db.session, permid)
-        crud.delete_perm(db.session, permid, requester)
-        db.session.commit()
-        MVUserPermission.refresh()
-        MVGroupPermission.refresh()
+        crud.delete_perm(db.session, perm_id, requester)
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -272,8 +206,7 @@ def create_group():
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         group_data = load_json_from_request(request)
         new_group = crud.create_group(db.session, group_data, requester)
-        db.session.add(new_group)
-        db.session.commit()
+
         return make_response(json.dumps({
             "status": 200,
             "id": new_group.id
@@ -288,11 +221,10 @@ def list_group():
     try:
         groups = crud.search_group(
             db.session,
-
             # search filters
             request.args['name'] if 'name' in request.args else None
         )
-        groups_safe = list(map(lambda p: p.safeDict(), groups))
+        groups_safe = list(map(lambda p: p.safe_dict(), groups))
         for g in groups_safe:
             g['created_date'] = g['created_date'].isoformat()
         return make_response(json.dumps({"groups": groups_safe}, default=json_serial), 200)
@@ -305,7 +237,7 @@ def list_group():
 def get_group(group):
     try:
         group = crud.get_group(db.session, group)
-        group = group.safeDict()
+        group = group.safe_dict()
         group['created_date'] = group['created_date'].isoformat()
         return make_response(json.dumps(group, default=json_serial), 200)
     except HTTPRequestError as err:
@@ -319,7 +251,6 @@ def update_group(group):
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         group_data = load_json_from_request(request)
         crud.update_group(db.session, group, group_data, requester)
-        db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -331,8 +262,6 @@ def delete_group(group):
     try:
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         crud.delete_group(db.session, group, requester)
-        MVGroupPermission.refresh()
-        db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -347,7 +276,6 @@ def add_user_to_group(user, group):
             rship.add_user_group(db.session, user, group, requester)
         else:
             rship.remove_user_group(db.session, user, group, requester)
-        db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -363,8 +291,6 @@ def add_group_permission(group, permission):
         else:
             rship.remove_group_permission(db.session, group,
                                           permission, requester)
-        MVGroupPermission.refresh()
-        db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -380,8 +306,6 @@ def add_user_permission(user, permission):
         else:
             rship.remove_user_permission(db.session, user,
                                          permission, requester)
-        MVUserPermission.refresh()
-        db.session.commit()
         return format_response(200)
     except HTTPRequestError as err:
         publish_alarm(err)
@@ -412,7 +336,7 @@ def get_user_direct_permissions(user):
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
-        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
@@ -424,19 +348,19 @@ def get_all_user_permissions(user):
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
-        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
 @app.route('/pap/user/<user>/groups', methods=['GET'])
-def get_user_grups(user):
+def get_user_groups(user):
     try:
         groups = reports.get_user_groups(db.session, user)
     except HTTPRequestError as err:
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
-        groups_safe = list(map(lambda p: p.safeDict(), groups))
+        groups_safe = list(map(lambda p: p.safe_dict(), groups))
         return make_response(json.dumps({"groups": groups_safe}, default=json_serial), 200)
 
 
@@ -448,7 +372,7 @@ def get_group_permissions(group):
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
-        permissions_safe = list(map(lambda p: p.safeDict(), permissions))
+        permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
 
 
@@ -460,7 +384,7 @@ def get_group_users(group):
         publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
-        users_safe = list(map(lambda p: p.safeDict(), users))
+        users_safe = list(map(lambda p: p.safe_dict(), users))
         return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
 
 

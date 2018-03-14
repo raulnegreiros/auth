@@ -119,7 +119,7 @@ Service is the token that associates the user with the set of devices and flows 
 
 + Response 200 (application/json)
 
-            {
+            [{
               "user": {
                 "id": "2",
                 "name": "test",
@@ -128,14 +128,14 @@ Service is the token that associates the user with the set of devices and flows 
                 "email": "test@noemail.com",
                 "profile": "user",
                 "created_date": "2018-01-04 13:09:03.568749",
-                "created_by": "1"
+                "created_by": "0"
               },
               "groups": [
                 "user"
               ],
               "could not add": [],
               "message": "user created"
-            }
+            }]
 
 + Response 401 (application/json)
 
@@ -191,9 +191,8 @@ Replaces user information. Fields or attributes that are not informed will rever
   + Body
 
             {
-                "username": "test",
                 "service": "test",
-                "email": "test@noemail.com",
+                "email": "test_new@noemail.com",
                 "name": "test",
                 "profile": "user"
             }

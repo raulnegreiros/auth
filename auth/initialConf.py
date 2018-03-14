@@ -32,12 +32,15 @@ def create_users():
     for user in predef_users:
         # check if the user already exists
         # if the user exist, chances are this scrip has been run before
+        print("Querying database for user {}".format(user))
         another_user = db.session.query(User.id) \
                                 .filter_by(username=user['username']) \
                                 .one_or_none()
         if another_user:
             print("This is not the first container run. Skipping")
             exit(0)
+        print("Database access returned.")
+
         # mark the user as automatically created
         user['created_by'] = 0
 
@@ -47,7 +50,9 @@ def create_users():
                              user['salt'],
                              1000).split('$').pop()
         del user['passwd']
+        print("Creating a new instance of this user.")
         new_user = User(**user)
+        print("New instance created.")
 
         # configure kong shared secret
         kong_data = kong.configure_kong(new_user.username)
@@ -131,10 +136,10 @@ def add_user_groups():
     ]
 
     for user in predef_user_group:
-        user_id = User.getByNameOrID(user['name']).id
+        user_id = User.get_by_name_or_id(user['name']).id
         for group_name in user['groups']:
             r = UserGroup(user_id=user_id,
-                          group_id=Group.getByNameOrID(group_name).id)
+                          group_id=Group.get_by_name_or_id(group_name).id)
             db.session.add(r)
     db.session.commit()
 
@@ -164,9 +169,9 @@ def add_permissions_group():
     ]
 
     for group in predef_group_perm:
-        group_id = Group.getByNameOrID(group['name']).id
+        group_id = Group.get_by_name_or_id(group['name']).id
         for perm in group['permission']:
-            perm_id = Permission.getByNameOrID(perm).id
+            perm_id = Permission.get_by_name_or_id(perm).id
             r = GroupPermission(group_id=group_id, permission_id=perm_id)
             db.session.add(r)
 
@@ -176,10 +181,15 @@ def add_permissions_group():
 def populate():
     print("Creating initial user and permission...")
     try:
+        print("Creating users")
         create_users()
+        print("Creating groups")
         create_groups()
+        print("Creating permissions")
         create_permissions()
+        print("Adding permissions to groups")
         add_permissions_group()
+        print("Adding users to groups")
         add_user_groups()
     except sqlalchemy_exceptions.DBAPIError as err:
         print("Could not connect to the database.")
