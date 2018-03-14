@@ -2,16 +2,6 @@
 
 set -e -x
 
-# emulate device-manager initial configuration
-echo Running waitForDb
-python3 ./tests/waitForDb.py
-echo waitForDb ok
-
-echo Creating model databases
-# create database tables
-python3 -c "from auth.webRoutes import db; db.create_all()"
-echo model databases ok
-
 echo Running initialConf.py
 # create predefined users and groups
 python3 ./auth/initialConf.py
