@@ -3,10 +3,24 @@ services:
   - docker
 python:
   - '3.6'
+cache:
+  directories:
+  - node_modules
+before_install:
+  - npm install aglio
 script:
   - 'docker build -t ${TRAVIS_REPO_SLUG} .'
   - 'docker build -t dredd-tests . -f ./tests/Dockerfile'
   - 'docker-compose -f ./tests/docker-compose.yml up -d auth-redis postgres'
   - 'docker-compose -f ./tests/docker-compose.yml run auth'
+  - node_modules/.bin/aglio -i ./docs/apiary.apib -o ./docs/apiary_${TRAVIS_BRANCH}.html
 after_success:
   - travis/publish.sh
+deploy:
+  provider: pages
+  local-dir: ./docs
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN  # Set in travis-ci.org dashboard, marked secure
+  keep-history: true
+  on:
+    branch: master

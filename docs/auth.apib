@@ -8,7 +8,7 @@ Endpoints to perform user and session management
 
 ## Session management [/]
 
-### Create session [POST]
+### Create session [POST /]
 Authenticate with the system, returning a session token to be used with API
 
 + Request (application/json)
@@ -56,7 +56,7 @@ Authenticate with the system, returning a session token to be used with API
 
 ## Known users manipulation [/user]
 
-### List known users [GET]
+### List known users [GET /user]
 
 Lists all users known to the platform
 + Request
@@ -97,7 +97,7 @@ Lists all users known to the platform
             {"message":"Unauthorized"}
 
 
-### Register a new user [POST]
+### Register a new user [POST /user]
 Creates a new user, assigning it a service.
 
 Service is the token that associates the user with the set of devices and flows it has access to.
@@ -147,7 +147,7 @@ Access a user's authorization and identification information
 + parameters
   + id: 1 (required, string) - The user ID
 
-### Get user info [GET]
+### Get user info [GET /user/{id}]
 Retrieves all information from a specific registered user
 + Request
     + Headers
@@ -181,7 +181,7 @@ Retrieves all information from a specific registered user
             }
 
 
-### Update user info [PUT]
+### Update user info [PUT /user/{id}]
 Replaces user information. Fields or attributes that are not informed will revert to their defaults.
 + Request (application/json)
     + Headers
@@ -215,7 +215,7 @@ Replaces user information. Fields or attributes that are not informed will rever
                 "status": 404
             }
 
-### Remove user [DELETE]
+### Remove user [DELETE /user/{id}]
 Removes a user from the system
 + Request
     + Headers
@@ -246,7 +246,7 @@ List all known tenants in dojot
 This is an internal call used for debugging, and for service initialization procedure. Hence only
 calls issued from within the platform will be accepted.
 
-### List tenants [GET]
+### List tenants [GET /admin/tenants]
 List all tenants currently configured in dojot
 
 + Response 200 (application/json)

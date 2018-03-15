@@ -1,6 +1,8 @@
 *.pyc
 *.bin
 auth/logs
+docs/build/
 .eggs
 auth.egg-info
 .idea/
+.vscode/
