@@ -181,14 +181,9 @@ locale_dirs = ['locale/']  # path is example but recommended
 
 numfig = True
 
-if 'TRAVIS_BRANCH' in os.environ:
-    GIT_BRANCH = os.environ['TRAVIS_BRANCH']
-else:
-    GIT_BRANCH = ''
-
 rst_epilog = """
     .. _Github pages API description: https://dojot.github.io/{0}/apiary_{1}.html
-""".format(project, GIT_BRANCH)
+""".format(project, READTHEDOCS_VERSION)
 
 def setup(app):
     app.add_stylesheet('css/theme_overrides.css')
