@@ -6,16 +6,13 @@ Endpoint to easily generate policies reports
 
 # Group Reports
 
-# Get user direct permissions [GET /pap/user/{user}/directpermissions]
+## User direct permissions [/pap/user/{user}/directpermissions]
+
 + Parameters
-    + user: `admin` (required, string) - user being requested.
+    + user: admin (required, string) - user being requested.
 
-+ Response 404 (application/json)
 
-            {
-                "status": 404,
-                "message": "No user found with tihs username or ID"
-            }
+### Retrieve user direct permissions [GET]
 
 + Response 200 (application/json)
 
@@ -23,29 +20,33 @@ Endpoint to easily generate policies reports
                 "permissions": [
                     {
                         "id" : 130,
-                        "path" : "/exceptional/path\*",
+                        "path" : "/exceptional/path\\*",
                         "method" : "POST|PUT|DELETE",
                         "permission" : "permit"
                     },
                     {
                         "id" : 136,
                         "path" : "/cantaccess",
-                        "method" : "\*",
+                        "method" : "\\*",
                         "permission" : "deny"
                     }
                 ]
             }
 
-# Get all user permissions [GET /pap/user/{user}/allpermissions]
-+ Parameters
-    + user: `admin` (required, string) - user being requested.
-    
 + Response 404 (application/json)
 
             {
                 "status": 404,
                 "message": "No user found with tihs username or ID"
             }
+
+
+## All user permissions [/pap/user/{user}/allpermissions]
+
++ Parameters
+    + user: admin (required, string) - user being requested.
+
+### Retrieve all user permissions [GET]
 
 + Response 200 (application/json)
 
@@ -53,28 +54,33 @@ Endpoint to easily generate policies reports
                 "permissions": [
                     {
                         "id" : 131,
-                        "path" : "/devices/info/\*",
+                        "path" : "/devices/info/\\*",
                         "method" : "POST|PUT|DELETE",
                         "permission" : "permit"
                     },
                     {
                         "id" : 132,
                         "path" : "/auth/user",
-                        "method" : "\*",
+                        "method" : "\\*",
                         "permission" : "deny"
                     }
                 ]
             }
 
-# Get all groups a user is member [GET /pap/user/{user}/groups]
-+ Parameters
-    + user: `admin` (required, string) - user being requested.
 + Response 404 (application/json)
 
             {
                 "status": 404,
                 "message": "No user found with tihs username or ID"
             }
+
+
+## User groups [/pap/user/{user}/groups]
+
++ Parameters
+    + user: admin (required, string) - user being requested.
+
+### Retrieve all user groups [GET]
 
 + Response 200 (application/json)
 
@@ -91,15 +97,20 @@ Endpoint to easily generate policies reports
                 ]
             }
 
-# Get all permissions of a group [GET /pap/group/{group}/permissions]
-+ Parameters
-    + group: `users` (required, string) - user being requested.
 + Response 404 (application/json)
 
             {
                 "status": 404,
-                "message": "No group found with this name or ID"
+                "message": "No user found with tihs username or ID"
             }
+
+
+## Group permissions [/pap/group/{group}/permissions]
++ Parameters
+    + group: users (required, string) - user being requested.
+
+
+### Retrieve all group permissions [GET]
 
 + Response 200 (application/json)
 
@@ -107,22 +118,19 @@ Endpoint to easily generate policies reports
                 "permissions": [
                     {
                         "id" : 131,
-                        "path" : "/devices/info/\*",
+                        "path" : "/devices/info/\\*",
                         "method" : "POST|PUT|DELETE",
                         "permission" : "permit"
                     },
                     {
                         "id" : 132,
                         "path" : "/auth/user",
-                        "method" : "\*",
+                        "method" : "\\*",
                         "permission" : "deny"
                     }
                 ]
             }
 
-# Get all members of a group [GET /pap/group/{group}/users]
-+ Parameters
-    + group: `users` (required, string) - user being requested.
 + Response 404 (application/json)
 
             {
@@ -131,6 +139,12 @@ Endpoint to easily generate policies reports
             }
 
 
+## Group users [/pap/group/{group}/users]
+
++ Parameters
+    + group: users (required, string) - user being requested.
+
+### Retrieve all users from a group [GET]
 + Response 200 (application/json)
 
             {
@@ -150,4 +164,11 @@ Endpoint to easily generate policies reports
                         "service": "user"
                     }
                 ]
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404,
+                "message": "No group found with this name or ID"
             }
