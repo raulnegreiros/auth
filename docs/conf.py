@@ -183,7 +183,7 @@ numfig = True
 
 rst_epilog = """
     .. _Github pages API description: https://dojot.github.io/{0}/apiary_{1}.html
-""".format(project, READTHEDOCS_VERSION)
+""".format(project, os.environ['READTHEDOCS_VERSION'])
 
 def setup(app):
     app.add_stylesheet('css/theme_overrides.css')
