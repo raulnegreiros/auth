@@ -9,7 +9,7 @@ then
 else 
   export VERSION="${TRAVIS_BRANCH}"
 fi
-aglio -i apiary.apib -o apiary_${VERSION}.html
+node_modules/.bin/aglio -i apiary.apib -o apiary_${VERSION}.html
 
 git add apiary_${VERSION}.html
 git commit -m 'Updating gh-pages'
