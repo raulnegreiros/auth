@@ -16,4 +16,6 @@ node_modules/.bin/aglio -i apiary.apib -o apiary_${VERSION}.html
 git add apiary_${VERSION}.html
 git commit -m 'Updating gh-pages'
 git push http://${GITHUB_TOKEN}:x-oauth-basic@github.com/${TRAVIS_REPO_SLUG} gh-pages
+git checkout -- .
+git clean -fd
 git checkout ${TRAVIS_BRANCH}
