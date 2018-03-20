@@ -25,6 +25,7 @@ from utils.serialization import json_serial
 
 from alarmlibrary.connection import RabbitMqClientConnection
 from alarmlibrary.alarm import Alarm, AlarmSeverity
+from database.flaskAlchemyInit import log
 
 if conf.rabbitmq_host != "DISABLED":
     rabbit_client = RabbitMqClientConnection()
@@ -53,7 +54,11 @@ def publish_alarm(err):
         if err.errorCode == 400:
             alarm.add_additional_data("userid", "1")
         if rabbit_client is not None:
-            rabbit_client.send(alarm)
+            try:
+                rabbit_client.send(alarm)
+            except Exception as err:
+                log().error(f"There was a problem with RabbitMQ connection. Error is: {err}")
+                log().error("No alarm was sent.")
 
 # Authentication endpoint
 @app.route('/', methods=['POST'])
