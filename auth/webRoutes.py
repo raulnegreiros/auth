@@ -57,7 +57,7 @@ def publish_alarm(err):
             try:
                 rabbit_client.send(alarm)
             except Exception as err:
-                log().error(f"There was a problem with RabbitMQ connection. Error is: {err}")
+                log().error("There was a problem with RabbitMQ connection. Error is: {}".format(err))
                 log().error("No alarm was sent.")
 
 # Authentication endpoint
