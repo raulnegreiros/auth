@@ -134,11 +134,5 @@ aglio -i docs/auth.apib -s
 
 ## Tests
 
-Auth has some automated test scripts.
-We use [pyresttest](https://github.com/svanoort/pyresttest) format for the test schemas.
-Tests should be run with DISABLED Kong and DISABLED JWT signature verification.
-You can run the test with:
-
-```shell
-python resttest.py "http://authhost:port" test/<TEST_FILE>.yaml
-```
+Auth has some automated test scripts. We use `Dredd <http://dredd.org/en/latest/>`_ to execute them. Check the
+`Dockerfile <./tests/Dockerfile>`_ used to build the test image to check how to run it.
