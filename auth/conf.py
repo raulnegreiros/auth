@@ -41,8 +41,7 @@ emailPasswd = os.environ.get("AUTH_EMAIL_PASSWD", "")
 
 # if you are using a front end with Auth,
 # define this link to point to the password reset view on you FE
-resetPwdView = os.environ.get("AUTH_RESET_PWD_VIEW",
-                              "https://localhost:5000/password/resetlink")
+resetPwdView = os.environ.get("AUTH_RESET_PWD_VIEW", "")
 
 # if EMAIL_HOST is set to NOEMAIL a temporary password is given to
 # new users

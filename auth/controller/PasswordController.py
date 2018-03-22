@@ -235,7 +235,7 @@ def create_password_reset_request(db_session, username):
 
     with open('templates/passwordReset.html', 'r') as f:
         html = f.read()
-    reset_link = conf.resetPwdView + '?link=' + request_dict['link']
+    reset_link = conf.resetPwdView + request_dict['link']
     html = html.format(name=user.name, link=reset_link)
     send_mail(user.email, 'Password Reset', html)
 
@@ -252,7 +252,7 @@ def create_password_set_request(db_session, user):
 
     with open('templates/passwordSet.html', 'r') as f:
         html = f.read()
-    reset_link = conf.resetPwdView + '?link=' + request_dict['link']
+    reset_link = conf.resetPwdView + request_dict['link']
     html = html.format(name=user.name,
                        link=reset_link,
                        username=user.username)
