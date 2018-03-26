@@ -17,5 +17,7 @@ container, from the repository's root:
 
 .. code-block:: shell
   
-   # you may need sudo on your machine: https://docs.docker.com/engine/installation/linux/linux-postinstall/
    docker build -t <tag> -f docker/Dockerfile .
+
+In order to run this command, you may need sudo on your machine:
+https://docs.docker.com/engine/installation/linux/linux-postinstall/
