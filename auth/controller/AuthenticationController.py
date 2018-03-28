@@ -14,7 +14,7 @@ import conf
 from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
 from database.flaskAlchemyInit import log
-
+from auth.alarms import AlarmError
 
 def authenticate(db_session, auth_data):
     if 'username' not in auth_data.keys():
@@ -28,7 +28,7 @@ def authenticate(db_session, auth_data):
     try:
         user = db_session.query(User).filter_by(username=username.lower()).one()
     except orm_exceptions.NoResultFound:
-        raise HTTPRequestError(401, 'not authorized')
+        raise AlarmError(401, 'AuthenticationError', username)
     except sqlalchemy_exceptions.DBAPIError:
         raise HTTPRequestError(500, 'Problem connecting to database')
 
@@ -57,7 +57,7 @@ def authenticate(db_session, auth_data):
         log().info('user ' + user.username + ' loged in')
         return str(encoded, 'ascii')
 
-    raise HTTPRequestError(401, 'not authorized')
+    raise AlarmError(403, 'AuthorizationError', username, user.id)
 
 
 # this helper function receive a base64 JWT token
@@ -65,7 +65,7 @@ def authenticate(db_session, auth_data):
 # and returns the jwt payload as a python dictionary
 def get_jwt_payload(raw_jwt):
     if not raw_jwt:
-        raise HTTPRequestError(401, "not authorized")
+        raise HTTPRequestError(401, "AuthenticationError")
 
     # remove the bearer of the token
     split_token = raw_jwt.split(' ')
@@ -88,5 +88,5 @@ def get_jwt_payload(raw_jwt):
 
 def user_id_from_jwt(token):
     if not token:
-        raise HTTPRequestError(401, "not authorized")
+        raise HTTPRequestError(401, "AuthenticationError")
     return get_jwt_payload(token)['userid']
