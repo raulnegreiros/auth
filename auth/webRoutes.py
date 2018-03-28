@@ -23,43 +23,6 @@ import database.Cache as cache
 
 from utils.serialization import json_serial
 
-from alarmlibrary.connection import RabbitMqClientConnection
-from alarmlibrary.alarm import Alarm, AlarmSeverity
-from database.flaskAlchemyInit import log
-
-if conf.rabbitmq_host != "DISABLED":
-    rabbit_client = RabbitMqClientConnection()
-    rabbit_client.open(conf.rabbitmq_host)
-else:
-    rabbit_client = None
-
-def publish_alarm(err):
-    """
-    Publish an alarm for the HTTP2ALARM posible error codes
-    """
-
-    HTTP2ALARM = {
-        400 : "AuthenticationError",
-        401 : "AuthorizationError"
-    }
-
-    if err.errorCode in HTTP2ALARM:
-        alarm = Alarm(namespace="dojot.auth", severity=AlarmSeverity.Minor,
-                      domain=HTTP2ALARM[err.errorCode],
-                      description=err.message)
-        alarm.add_additional_data("reason", err.message)
-        alarm.add_primary_subject("instance_id", "1")
-        alarm.add_primary_subject("module_name", "Authentication Module")
-        alarm.add_additional_data("username", "Mario")
-        if err.errorCode == 400:
-            alarm.add_additional_data("userid", "1")
-        if rabbit_client is not None:
-            try:
-                rabbit_client.send(alarm)
-            except Exception as err:
-                log().error(f"There was a problem with RabbitMQ connection. Error is: {err}")
-                log().error("No alarm was sent.")
-
 # Authentication endpoint
 @app.route('/', methods=['POST'])
 def authenticate():
@@ -68,7 +31,6 @@ def authenticate():
         jwt = auth.authenticate(db.session, auth_data)
         return make_response(json.dumps({'jwt': jwt}), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -83,7 +45,6 @@ def create_user():
         return jsonify(result, 200)
 
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -98,7 +59,6 @@ def list_users():
         users_safe = list(map(lambda u: u.safe_dict(), users))
         return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -108,7 +68,6 @@ def get_user(user):
         user = crud.get_user(db.session, user)
         return make_response(json.dumps({"user": user.safe_dict()}, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -121,7 +80,6 @@ def update_user(user_id):
         return format_response(200)
 
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -132,7 +90,6 @@ def remove_user(user):
         crud.delete_user(db.session, user, requester)
         return format_response(200, "User removed")
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -148,8 +105,6 @@ def create_permission():
             "id": new_perm.id
         }), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
-        print(f"Error: {err}")
         return format_response(err.errorCode, err.message)
 
 
@@ -167,7 +122,6 @@ def list_permissions():
         permissions_safe = list(map(lambda p: p.safe_dict(), perms))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -177,7 +131,6 @@ def get_permission(perm_id):
         perm = crud.get_perm(db.session, perm_id)
         return make_response(json.dumps(perm.safe_dict(), default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -189,7 +142,6 @@ def update_permission(perm_id):
         crud.update_perm(db.session, perm_id, perm_data, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -200,7 +152,6 @@ def delete_permission(perm_id):
         crud.delete_perm(db.session, perm_id, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -217,7 +168,6 @@ def create_group():
             "id": new_group.id
         }, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -234,7 +184,6 @@ def list_group():
             g['created_date'] = g['created_date'].isoformat()
         return make_response(json.dumps({"groups": groups_safe}, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -246,7 +195,6 @@ def get_group(group):
         group['created_date'] = group['created_date'].isoformat()
         return make_response(json.dumps(group, default=json_serial), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -258,7 +206,6 @@ def update_group(group):
         crud.update_group(db.session, group, group_data, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -269,7 +216,6 @@ def delete_group(group):
         crud.delete_group(db.session, group, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -283,7 +229,6 @@ def add_user_to_group(user, group):
             rship.remove_user_group(db.session, user, group, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -298,7 +243,6 @@ def add_group_permission(group, permission):
                                           permission, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -313,7 +257,6 @@ def add_user_permission(user, permission):
                                          permission, requester)
         return format_response(200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
@@ -323,7 +266,6 @@ def pdp_request():
         pdp_data = load_json_from_request(request)
         veredict = pdpc.pdp_main(db.session, pdp_data)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         return make_response(json.dumps({
@@ -338,7 +280,6 @@ def get_user_direct_permissions(user):
     try:
         permissions = reports.get_user_direct_permissions(db.session, user)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
@@ -350,7 +291,6 @@ def get_all_user_permissions(user):
     try:
         permissions = reports.get_all_user_permissions(db.session, user)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
@@ -362,7 +302,6 @@ def get_user_groups(user):
     try:
         groups = reports.get_user_groups(db.session, user)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         groups_safe = list(map(lambda p: p.safe_dict(), groups))
@@ -374,7 +313,6 @@ def get_group_permissions(group):
     try:
         permissions = reports.get_group_permissions(db.session, group)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         permissions_safe = list(map(lambda p: p.safe_dict(), permissions))
@@ -386,7 +324,6 @@ def get_group_users(group):
     try:
         users = reports.get_group_users(db.session, group)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         users_safe = list(map(lambda p: p.safe_dict(), users))
@@ -402,7 +339,6 @@ def passwd_reset_request(username):
         pwdc.create_password_reset_request(db.session, username)
         db.session.commit()
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         return format_response(200)
@@ -430,7 +366,6 @@ def password_reset():
         db.session.add(updating_user)
         db.session.commit()
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         return format_response(200)
@@ -444,7 +379,6 @@ def update_password():
         pwdc.update_endpoint(db.session, user_id, update_data)
         db.session.commit()
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
     else:
         return format_response(200)
@@ -466,7 +400,6 @@ def list_tenants():
         tenants = crud.list_tenants(db.session)
         return make_response(json.dumps({"tenants": tenants}), 200)
     except HTTPRequestError as err:
-        publish_alarm(err)
         return format_response(err.errorCode, err.message)
 
 
