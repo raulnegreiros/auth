@@ -6,12 +6,12 @@
  so it can be reused in any Flask + Alchemy project
 """
 
+import json
+import logging
 from flask import Flask
 from flask import make_response as fmake_response
-import json
 from flask_sqlalchemy import SQLAlchemy
 from logging.handlers import SysLogHandler
-import logging
 import conf as dbconf
 
 

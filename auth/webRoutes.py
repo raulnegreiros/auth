@@ -17,8 +17,8 @@ import controller.AuthenticationController as auth
 import controller.ReportController as reports
 import controller.PasswordController as pwdc
 import auth.kongUtils as kong
-from database.flaskAlchemyInit import app, db, format_response, \
-    HTTPRequestError, make_response, load_json_from_request
+from database.flaskAlchemyInit import app, db, format_response
+from database.flaskAlchemyInit import HTTPRequestError, make_response, load_json_from_request
 import database.Cache as cache
 
 from utils.serialization import json_serial

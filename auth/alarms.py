@@ -4,11 +4,25 @@ from alarmlibrary.alarm import Alarm, AlarmSeverity
 from database.flaskAlchemyInit import log
 from database.flaskAlchemyInit import HTTPRequestError
 
-if conf.rabbitmq_host != "DISABLED":
-    rabbit_client = RabbitMqClientConnection()
-    rabbit_client.open(conf.rabbitmq_host)
-else:
-    rabbit_client = None
+class RabbitManager(object):
+    def __init__(self, target=conf.rabbitmq_host):
+        self.target = target
+        self.client = None
+
+    def getClient(self):
+        if self.client is not None:
+            return self.client
+
+        if self.target != "DISABLED":
+            try:
+                self.client = RabbitMqClientConnection()
+                self.client.open(self.target)
+                return self.client
+            except Exception as error:
+                print("failed to create rabbit connection, ignoring alarm {}".format(error))
+                return None
+
+rabbit = RabbitManager()
 
 class AlarmError(HTTPRequestError):
 
@@ -33,9 +47,11 @@ class AlarmError(HTTPRequestError):
             alarm.add_additional_data("username", username)
             if error_code == 401:
                 alarm.add_additional_data("userid", userid)
+            rabbit_client = rabbit.getClient()
             if rabbit_client is not None:
                 try:
                     rabbit_client.send(alarm)
                 except Exception as ex:
-                    log().error("There was a problem with RabbitMQ connection. Error is: {ex}")
+                    log().error("There was a problem with RabbitMQ connection. Error is: {}".format(ex))
                     log().error("No alarm was sent.")
+
