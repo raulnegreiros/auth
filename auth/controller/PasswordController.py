@@ -154,10 +154,10 @@ def update(db_session, user, new_password):
 
 # an authenticated user can update it password
 def update_endpoint(db_session, user_id, up_data):
-    if up_data.get('oldpasswd', ""):
+    if up_data.get('oldpasswd', None) is None:
         raise HTTPRequestError(400, "Missing user's oldpasswd")
 
-    if up_data.get('newpasswd', ""):
+    if up_data.get('newpasswd', None) is None:
         raise HTTPRequestError(400, "Missing user's newpasswd")
 
     try:
