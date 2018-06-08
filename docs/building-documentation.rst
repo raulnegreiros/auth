@@ -14,7 +14,10 @@ actually based off `ReadTheDocs documentation`_.
 .. code:: shell
 
     pip install sphinx sphinx-autobuild sphinx_rtd_theme sphinx-intl
+    export READTHEDOCS_VERSION=latest
     make html
+
+The `READTHEDOCS_VERSION` environment variable should be set to the component version being built, such as `latest` or `0.2.0`. In the automated build process from readthedocs, this exact variable will be set as the name of the branch/tag being built.
 
 For that to work, you must have pip installed on the machine used to
 build the documentation. To install pip on an Ubuntu machine:
