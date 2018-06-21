@@ -119,7 +119,8 @@ def create_permissions():
         permission_dict_helper('ro_pap', "/pap/(.*)", "GET"),
         permission_dict_helper('ro_ca', "/ca/(.*)", "GET"),
         permission_dict_helper('wo_sign', "/sign/(.*)", "POST"),
-        permission_dict_helper('ro_alarms', "/alarmmanager/(.*)", "GET")
+        permission_dict_helper('ro_alarms', "/alarmmanager/(.*)", "GET"),
+        permission_dict_helper('ro_socketio', "/stream/socketio/", "GET")
     ]
 
     for p in predef_perms:
@@ -164,7 +165,8 @@ def add_permissions_group():
                 'all_mashup',
                 'ro_alarms',
                 'ro_ca',
-                'wo_sign'
+                'wo_sign',
+                "ro_socketio"
             ]
         }
     ]
