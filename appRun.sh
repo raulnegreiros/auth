@@ -2,6 +2,7 @@
 
 cd auth
 
+TIMEOUT=${GUNICORN_TIMEOUT:-30}
 # creates: Database, schema. Populates created database with predefined users and groups
 python ./initialConf.py
 rc=$?; if [[ ${rc} != 0 ]]; then exit ${rc}; fi
@@ -23,6 +24,7 @@ if [ $1 = 'start' ]; then
         exec gunicorn webRoutes:app \
                   --bind 0.0.0.0:5000 \
                   --reload -R \
+                  --timeout ${TIMEOUT} \
                   --access-logfile - \
                   --log-file - \
                   --env PYTHONUNBUFFERED=1 -k gevent 2>&1
