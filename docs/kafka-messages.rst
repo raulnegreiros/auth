@@ -55,4 +55,4 @@ Its payload is a simple JSON:
 And its attributes are:
 
 - *type* (string): "DELETE"
-- *tenant*: New tenant
+- *tenant*: Tenant to be removed
