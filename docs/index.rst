@@ -16,6 +16,7 @@ JWT token to be used when doing so.
    installation
    configuration
    api
+   kafka-messages
    building-documentation
 
 .. Indices and tables
