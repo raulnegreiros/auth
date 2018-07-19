@@ -26,7 +26,7 @@ def get_topic():
     target = "{}/topic/{}?global=true".format(conf.data_broker_host, conf.kafka_subject)
     user_info = json.dumps({
         "username": "auth",
-        "service": 'tenancy_management'
+        "service": 'internal'
     })
 
     jwt = "{:s}.{:s}.{:s}".format(str(base64.b64encode(b"model"), 'ascii'),
