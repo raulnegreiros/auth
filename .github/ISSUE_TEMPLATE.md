@@ -27,7 +27,6 @@
 * **Please tell us about your environment:**
   
   - Version: 0.2.x
-  - Browser: [all | Chrome XX | Firefox XX | IE XX | Safari XX | Mobile Chrome XX | Android X.X Web Browser | iOS XX Safari | iOS XX UIWebView | iOS XX WKWebView ]
   - Environment: [kubernetes, docker-compose, standalone]
   - Operating system: [Ubuntu 16.04, Fedora 28, Ubuntu on VirtualBox (Windows 10), etc.]
 
