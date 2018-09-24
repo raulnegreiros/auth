@@ -108,7 +108,6 @@ def create_user(db_session, user: User, requester):
     # User structure is finished.
     new_user = User(**user)
     log().info(f"User {user['username']} created by {requester['username']}")
-    log().info(new_user)
 
     # If no problems occur to create user (no exceptions), configure kong
     kong_data = kongUtils.configure_kong(new_user.username)
