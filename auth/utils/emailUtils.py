@@ -14,10 +14,16 @@ def send_mail(to, subject, html_msg):
     msg['From'] = conf.emailUsername
     msg['To'] = to
 
-    s = smtplib.SMTP(conf.emailHost, conf.emailPort)
-    if conf.emailTLS:
-        s.starttls()
-    s.login(conf.emailUsername, conf.emailPasswd)
-
-    s.sendmail(conf.emailUsername, [to], msg.as_string())
-    s.quit()
+    try:
+        s = smtplib.SMTP(conf.emailHost, conf.emailPort)
+        if conf.emailTLS:
+            s.starttls()
+        s.login(conf.emailUsername, conf.emailPasswd)
+        s.sendmail(conf.emailUsername, [to], msg.as_string())
+        s.quit()
+    except OSError:
+        raise Exception('Failed to retrieve SMTP socket. Is the SMTP port closed?')
+    except smtplib.SMTPAuthenticationError:
+        raise Exception('SMTP authentication failed')
+    except Exception as e:
+        raise Exception(e)

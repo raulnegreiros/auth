@@ -130,8 +130,11 @@ def create_user(db_session, user: User, requester):
                                  user['profile'], requester)
         db_session.commit()
     if conf.emailHost != 'NOEMAIL':
-        pwdc.create_password_set_request(db_session, new_user)
-        db_session.commit()
+        try:
+            pwdc.create_password_set_request(db_session, new_user)
+            db_session.commit()
+        except Exception as e:
+            log().warning(e)
 
     if count_tenant_users(db_session, new_user.service) == 1:
         log().info(f"Will emit tenant lifecycle event {new_user.service} - CREATE")
