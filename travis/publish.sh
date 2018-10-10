@@ -10,4 +10,4 @@ if [ $TRAVIS_PULL_REQUEST == false ] ; then
   docker tag ${TRAVIS_REPO_SLUG} ${tag}
   docker push $tag
 fi 
-#add comment
+#add comment to test travis
