@@ -9,4 +9,4 @@ if [ $TRAVIS_PULL_REQUEST == false ] ; then
   docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
   docker tag ${TRAVIS_REPO_SLUG} ${tag}
   docker push $tag
-fi
+fi 
