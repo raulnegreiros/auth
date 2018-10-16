@@ -1,7 +1,7 @@
 FROM python:3.6-alpine
 # RUN apk add --no-cache gcc libc-dev unixodbc-dev py-psycopg2
 
-RUN apk update && apk add build-base postgresql-dev libffi-dev git libc6-compat linux-headers bash dumb-init
+RUN apk update && apk --no-cache add build-base postgresql-dev libffi-dev git libc6-compat linux-headers bash dumb-init
 
 RUN pip install cython
 
