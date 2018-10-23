@@ -219,15 +219,6 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
     if 'email' in updated_info.keys():
         user.email = updated_info['email']
 
-    # Create a new kong secret and delete the old one
-    kong_data = kongUtils.configure_kong(user.username)
-    if kong_data is None:
-        raise HTTPRequestError(500, 'failed to configure verification subsystem')
-
-    kongUtils.revoke_kong_secret(user.username, user.kongId)
-    user.secret = kong_data['secret']
-    user.key = kong_data['key']
-    user.kongId = kong_data['kongid']
     db_session.add(user)
     db_session.commit()
 
