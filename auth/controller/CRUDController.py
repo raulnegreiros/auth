@@ -159,7 +159,8 @@ def search_user(db_session, username: str = None) -> [User]:
     :raises: HTTPRequestError if there is no users (or no such user)
     currently in the database.
     """
-    user_query = db_session.query(User)
+     #order the list of user by Name
+    user_query = db_session.query(User).order_by(User.name)
 
     if username:
         user_query = user_query.filter(User.username.like('%' + username + '%'))
