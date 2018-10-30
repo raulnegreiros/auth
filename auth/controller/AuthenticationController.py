@@ -42,8 +42,6 @@ def authenticate(db_session, auth_data):
             'iss': user.key,
             'iat': int(time.time()),
             'exp': int(time.time() + conf.tokenExpiration),
-            'name': user.name,
-            'email': user.email,
             'profile': user.profile,  # Obsolete. Kept for compatibility
             'groups': groups_id,
             'userid': user.id,
