@@ -490,7 +490,8 @@ def search_group(db_session, name=None):
     :param name: Group name
     :return:
     """
-    group_query = db_session.query(Group)
+    #Order by Name
+    group_query = db_session.query(Group).order_by(Group.name)
     if name:
         group_query = group_query.filter(Group.name.like('%' + name + '%'))
 
@@ -514,8 +515,7 @@ def update_group(db_session, group, group_data, requester):
     check_group(group_data)
     try:
         group = Group.get_by_name_or_id(group)
-        if 'name' in group_data.keys() and group.name != group_data['name']:
-            raise HTTPRequestError(400, "groups name can't be changed")
+
         for key, value in group_data.items():
             setattr(group, key, value)
         db_session.add(group)
