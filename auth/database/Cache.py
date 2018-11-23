@@ -53,13 +53,13 @@ def get_key(userid, action, resource):
 
 def set_key(userid, action, resource, veredict):
     try:
-        redis_store.setex(generate_key(
+       redis_store.setex(generate_key(
                                         userid,
                                         action,
                                         resource
                                       ),
-                          str(veredict),
-                          conf.cacheTtl   # time to live
+                          conf.cacheTtl,   # time to live
+                          str(veredict)
                           )
     except redis.exceptions.ConnectionError:
         LOGGER.warning("Failed to connect to redis")
