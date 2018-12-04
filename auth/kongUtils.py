@@ -47,8 +47,17 @@ def configure_kong(user):
                 'secret': reply['secret'],
                 'kongid': reply['id']
                 }
-    except ConnectionError:
-        LOGGER.error("Failed to connect to kong")
+    except ConnectionError as connection_error:
+        LOGGER.error(f"Failed to connect to kong: {connection_error}")
+        return None
+    except TimeoutError as timeout_error:
+        LOGGER.error(f"Kong timed out: {timeout_error}")
+        return None
+    except requests.TooManyRedirects as redirects_error:
+        LOGGER.error(f"Thank you! But our Kong is in another castle: {redirects_error}")
+        return None
+    except requests.exceptions.RequestException as request_error:
+        LOGGER.error(f"Something wrong happened while contacting Kong: {request_error}")
         return None
 
 
