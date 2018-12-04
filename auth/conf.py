@@ -89,6 +89,6 @@ kafka_host = os.environ.get("KAFKA_HOST",
 kafka_subject = 'dojot.tenancy'
 
 # Kafka topic (subject) manager
-data_broker_host = 'http://data-broker'
+data_broker_host =  os.environ.get("DATA_BROKER_URL", 'http://data-broker')
 
 rabbitmq_host = os.environ.get("RABBITMQ_HOST", "rabbitmq")
