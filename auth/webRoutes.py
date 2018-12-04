@@ -20,6 +20,7 @@ import auth.kongUtils as kong
 from database.flaskAlchemyInit import app, db, format_response
 from database.flaskAlchemyInit import HTTPRequestError, make_response, load_json_from_request
 import database.Cache as cache
+from controller.KafkaPublisher import Publisher
 
 from utils.serialization import json_serial
 from dojot.module import Log
@@ -412,5 +413,11 @@ def list_tenants():
         return format_response(err.errorCode, err.message)
 
 
+# Initializing Kafka publisher
+LOGGER.debug("Starting publisher initialization thread...")
+Publisher().start()
+LOGGER.debug("... publisher initialization thread started.")
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(host='0.0.0.0', port=5000, threaded=True)
+
