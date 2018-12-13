@@ -23,6 +23,7 @@ import database.Cache as cache
 
 from utils.serialization import json_serial
 
+
 # Authentication endpoint
 @app.route('/', methods=['POST'])
 def authenticate():
@@ -116,8 +117,8 @@ def list_permissions():
             # search filters
             request.args['path'] if 'path' in request.args else None,
             request.args['method'] if 'method' in request.args else None,
-            request.args['permission']
-            if 'permission' in request.args else None
+            request.args['permission'] if 'permission' in request.args else None,
+            request.args['type'] if 'type' in request.args else None
         )
         permissions_safe = list(map(lambda p: p.safe_dict(), perms))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)

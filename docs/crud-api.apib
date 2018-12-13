@@ -40,6 +40,7 @@ also be escaped
     + path: \/devices\/info (optional, string) - a path string.
     + method: POST (optional, enum) - one HTTP method.
     + permission: permit (optional, enum) - "permit" or "deny".
+    + permission: type (optional, enum) - "system" or "api".
 
 + Request (application/json)
     + Headers
@@ -54,7 +55,8 @@ also be escaped
                             "id" : 131,
                             "path" : "/devices/info/\\*",
                             "method" : "POST|PUT|DELETE",
-                            "permission" : "permit"
+                            "permission" : "permit",
+                            "type": "system"
                     }
                 ]
             }
@@ -84,7 +86,8 @@ also be escaped
                 "id" : 131,
                 "path" : "/devices/info/\\*",
                 "method" : "POST|PUT|DELETE",
-                "permission" : "permit"
+                "permission" : "permit",
+                "type": "system"
             }
 
 
@@ -144,6 +147,12 @@ also be escaped
             {
                 "status": 404,
                 "message": "No permission found with this ID"
+            }
++ Response 405 (application/json)
+
+            {
+                "status": 405,
+                "message": "Can't delete a system permission"
             }
 
 ## Group creation [/pap/group]
