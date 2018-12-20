@@ -343,7 +343,7 @@ def create_perm(db_session, permission, requester):
     check_perm(permission)
     permission['created_by'] = requester['userid']
     perm = Permission(**permission)
-    log().info(f"permission {perm.name} deleted by {requester['username']}")
+    log().info(f"permission {perm.name} create by {requester['username']}")
     log().info(perm.safe_dict())
 
     db_session.add(perm)

@@ -5,7 +5,7 @@ from database.flaskAlchemyInit import db
 from database.flaskAlchemyInit import HTTPRequestError
 
 
-# @hooks.before("CRUD Permissions and Group > Permissions creation and search > Search permission")
+@hooks.before("CRUD Permissions and Group > Permissions creation and search > Search permission")
 def create_sample_perms(transaction):
     permission = {
         "path": "/devices/info/\\*",

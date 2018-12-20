@@ -47,6 +47,8 @@ class Permission(db.Model):
 
         if (not tmp_dict['type'] is None) and type(tmp_dict['type']) != str:
             tmp_dict['type'] = tmp_dict['type'].value
+        elif tmp_dict['type'] is None:
+            tmp_dict['type'] = PermissionTypeEnum.api.value
 
         return tmp_dict
 
