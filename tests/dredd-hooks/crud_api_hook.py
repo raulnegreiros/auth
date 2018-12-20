@@ -11,7 +11,7 @@ def create_sample_perms(transaction):
         "path": "/devices/info/\\*",
         "method": "POST",
         "permission": "permit",
-        "name": "sample_permission"
+        "name": "sample_permission_device"
     }
     requester = {
         "userid": 0,
