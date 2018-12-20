@@ -31,7 +31,7 @@ def create_sample_perms(transaction):
         "path": "/auth/user",
         "method": "\\*",
         "permission": "deny",
-        "name": "deny_user_access"
+        "name": "deny_user_access" + str(randint(0, 1000))
     }
 
     try:
