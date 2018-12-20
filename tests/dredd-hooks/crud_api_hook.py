@@ -3,6 +3,7 @@ import json
 import controller.CRUDController as crud
 from database.flaskAlchemyInit import db
 from database.flaskAlchemyInit import HTTPRequestError
+from random import randint
 
 
 @hooks.before("CRUD Permissions and Group > Permissions creation and search > Search permission")
@@ -11,7 +12,7 @@ def create_sample_perms(transaction):
         "path": "/devices/info/\\*",
         "method": "POST",
         "permission": "permit",
-        "name": "sample_permission_device"
+        "name": "sample_permission_device" + randint(0, 1000)
     }
     requester = {
         "userid": 0,
