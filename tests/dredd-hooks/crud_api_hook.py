@@ -3,16 +3,15 @@ import json
 import controller.CRUDController as crud
 from database.flaskAlchemyInit import db
 from database.flaskAlchemyInit import HTTPRequestError
-from random import randint
 
 
-@hooks.before("CRUD Permissions and Group > Permissions creation and search > Search permission")
+# @hooks.before("CRUD Permissions and Group > Permissions creation and search > Search permission")
 def create_sample_perms(transaction):
     permission = {
         "path": "/devices/info/\\*",
         "method": "POST",
         "permission": "permit",
-        "name": "sample_permission_device" + str(randint(0, 1000))
+        "name": "sample_permission"
     }
     requester = {
         "userid": 0,
@@ -31,7 +30,7 @@ def create_sample_perms(transaction):
         "path": "/auth/user",
         "method": "\\*",
         "permission": "deny",
-        "name": "deny_user_access" + str(randint(0, 1000))
+        "name": "deny_user_access"
     }
 
     try:
