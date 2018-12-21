@@ -88,13 +88,13 @@ def create_groups():
 
 # A utility function to create a permission dict
 # so the List 'predefPerms' get less verbose
-def permission_dict_helper(name, path, method, permission=PermissionEnum.permit, type=PermissionTypeEnum.system):
+def permission_dict_helper(name, path, method, permission=PermissionEnum.permit, type_perm=PermissionTypeEnum.system):
     return {
         "name": name,
         "path":  path,
         "method": method,
         "permission": permission,
-        "type": type,
+        "type": type_perm,
         "created_by": 0
     }
 
