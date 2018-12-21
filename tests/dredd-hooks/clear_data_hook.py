@@ -1,7 +1,10 @@
 import dredd_hooks as hooks
 import controller.CRUDController as crud
+from database.Models import PermissionTypeEnum
 from database.flaskAlchemyInit import db
 from database.flaskAlchemyInit import HTTPRequestError
+
+from database.flaskAlchemyInit import log
 
 
 @hooks.before_all
@@ -10,6 +13,7 @@ def auth_clear_permissions_and_groups(transaction):
         "userid": 0,
         "username": "dredd"
     }
+    log().info(">>>>>>> Limpando cenario para proxima execucao...")
     try:
         users = crud.search_user(db.session, None)
         # Delete all users
@@ -20,10 +24,14 @@ def auth_clear_permissions_and_groups(transaction):
 
     try:
         permissions = crud.search_perm(db.session)
+        log().info(">>>>>>> Removendo permissao: ")
         for permission in permissions:
-            crud.delete_perm(db.session, permission.name, requester)
+            log().info(">>>>>>> Permissao: " + permission.name + ", tipo: " + permission.type.value)
+            if permission.type != PermissionTypeEnum.system:
+                crud.delete_perm(db.session, permission.name, requester)
     except HTTPRequestError as e:
-        pass
+        log().error(">>>>> Excecao durante remocao de permissao: " + e)
+        # pass
 
     try:
         groups = crud.search_group(db.session)
@@ -31,6 +39,8 @@ def auth_clear_permissions_and_groups(transaction):
             crud.delete_group(db.session, group.name, requester)
     except HTTPRequestError as e:
         pass
+
+    log().info(">>>>>>> ... cenario foi limpo.")
 
 
 @hooks.after_each
@@ -39,6 +49,7 @@ def auth_clear_everything_hook(transaction):
         "userid": 0,
         "username": "dredd"
     }
+    log().info(">>>>>>> Limpando cenario apos execucao de caso de teste...")
     try:
         users = crud.search_user(db.session, None)
         # Delete all users
@@ -49,10 +60,14 @@ def auth_clear_everything_hook(transaction):
 
     try:
         permissions = crud.search_perm(db.session)
+        log().info(">>>>>>> Removendo permissao: ")
         for permission in permissions:
-            crud.delete_perm(db.session, permission.name, requester)
+            log().info(">>>>>>> Permissao: " + permission.name + ", tipo: " + permission.type.value)
+            if permission.type != PermissionTypeEnum.system:
+                crud.delete_perm(db.session, permission.name, requester)
     except HTTPRequestError as e:
-        pass
+        log().error(">>>>> Excecao durante remocao de permissao: " + e)
+        # pass
 
     try:
         groups = crud.search_group(db.session)
@@ -60,3 +75,5 @@ def auth_clear_everything_hook(transaction):
             crud.delete_group(db.session, group.name, requester)
     except HTTPRequestError as e:
         pass
+
+    log().info(">>>>>>> ... cenario foi limpo apos execucao de caso de teste.")
