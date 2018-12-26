@@ -20,12 +20,18 @@ class PermissionEnum(enum.Enum):
     notApplicable = 'notApplicable'
 
 
+class PermissionTypeEnum(enum.Enum):
+    system = 'system'
+    api = 'api'
+    notApplicable = 'notApplicable'
+
+
 # Model for the database tables
 class Permission(db.Model):
     __tablename__ = 'permission'
 
     # fields that can be filled by user input
-    fillable = ['name', 'path', 'method', 'permission']
+    fillable = ['name', 'path', 'method', 'permission', 'type']
 
     def as_dict(self):
         """
@@ -38,6 +44,12 @@ class Permission(db.Model):
                   }
         if type(tmp_dict['permission']) != str:
             tmp_dict['permission'] = tmp_dict['permission'].value
+
+        if (not tmp_dict['type'] is None) and type(tmp_dict['type']) != str:
+            tmp_dict['type'] = tmp_dict['type'].value
+        elif tmp_dict['type'] is None:
+            tmp_dict['type'] = PermissionTypeEnum.api.value
+
         return tmp_dict
 
     def safe_dict(self):
@@ -62,6 +74,7 @@ class Permission(db.Model):
                   unique=True, index=True)
     method = Column(String(PermissionLimits.method), nullable=False)
     permission = Column(Enum(PermissionEnum), nullable=False)
+    type = Column(Enum(PermissionTypeEnum), nullable=False, default=PermissionTypeEnum.api)
 
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
     created_by = Column(Integer, nullable=False)
@@ -209,10 +222,11 @@ class PasswordRequest(db.Model):
 
 class MVUserPermission(db.Model):
     selectClause = db.select([UserPermission.user_id,
-                             Permission.id,
-                             Permission.path,
-                             Permission.method,
-                             Permission.permission, ]
+                              Permission.id,
+                              Permission.path,
+                              Permission.method,
+                              Permission.permission,
+                              Permission.type, ]
                              ).select_from(db.join(UserPermission, Permission))
 
     __table__ = create_mat_view('mv_user_permission',
@@ -233,10 +247,11 @@ db.Index('mv_user_permission_user_idx', MVUserPermission.user_id, unique=False)
 
 class MVGroupPermission(db.Model):
     selectClause = db.select([GroupPermission.group_id,
-                             Permission.id,
-                             Permission.path,
-                             Permission.method,
-                             Permission.permission, ]
+                              Permission.id,
+                              Permission.path,
+                              Permission.method,
+                              Permission.permission,
+                              Permission.type,]
                              ).select_from(db.join(GroupPermission,
                                                    Permission))
 

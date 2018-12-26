@@ -6,7 +6,7 @@ import re
 import sqlalchemy.orm.exc as orm_exceptions
 
 import controller.PasswordController as password
-from database.Models import Permission, User, Group, PermissionEnum
+from database.Models import Permission, User, Group, PermissionEnum, PermissionTypeEnum
 import controller.RelationshipController as rship
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
@@ -343,7 +343,7 @@ def create_perm(db_session, permission, requester):
     check_perm(permission)
     permission['created_by'] = requester['userid']
     perm = Permission(**permission)
-    log().info(f"permission {perm.name} deleted by {requester['username']}")
+    log().info(f"permission {perm.name} create by {requester['username']}")
     log().info(perm.safe_dict())
 
     db_session.add(perm)
@@ -351,7 +351,7 @@ def create_perm(db_session, permission, requester):
     return perm
 
 
-def search_perm(db_session, path=None, method=None, permission=None):
+def search_perm(db_session, path=None, method=None, permission=None, type=None):
     """
     Retrieves a set of permissions from database.
     :param db_session: The postgres session to be used.
@@ -373,6 +373,11 @@ def search_perm(db_session, path=None, method=None, permission=None):
         if permission not in [p.value for p in PermissionEnum]:
             raise HTTPRequestError(400, f"Invalid filter. Permission can't be {permission}")
         perm_query = perm_query.filter_by(permission=permission)
+
+    if type:
+        if type not in [p.value for p in PermissionTypeEnum]:
+            raise HTTPRequestError(400, f"Invalid filter. Permission type can't be {type}")
+        perm_query = perm_query.filter_by(type=type)
 
     perms = perm_query.all()
     if not perms:
@@ -427,19 +432,22 @@ def delete_perm(db_session, permission: str, requester):
     """
     try:
         perm = Permission.get_by_name_or_id(permission)
-        db_session.execute(
-            UserPermission.__table__.delete(UserPermission.permission_id == perm.id)
-        )
-        db_session.execute(
-            GroupPermission.__table__.delete(GroupPermission.permission_id == perm.id)
-        )
-        cache.delete_key(action=perm.method, resource=perm.path)
-        log().info(f"permission {perm.name} deleted by {requester['username']}")
-        log().info(perm.safe_dict())
-        db_session.delete(perm)
-        db_session.commit()
-        MVUserPermission.refresh()
-        MVGroupPermission.refresh()
+        if perm.type == PermissionTypeEnum.api:
+            db_session.execute(
+                UserPermission.__table__.delete(UserPermission.permission_id == perm.id)
+            )
+            db_session.execute(
+                GroupPermission.__table__.delete(GroupPermission.permission_id == perm.id)
+            )
+            cache.delete_key(action=perm.method, resource=perm.path)
+            log().info(f"permission {perm.name} deleted by {requester['username']}")
+            log().info(perm.safe_dict())
+            db_session.delete(perm)
+            db_session.commit()
+            MVUserPermission.refresh()
+            MVGroupPermission.refresh()
+        else:
+            raise HTTPRequestError(405, "Can't delete a system permission")
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID or name")
 
