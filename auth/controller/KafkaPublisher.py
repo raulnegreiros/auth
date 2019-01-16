@@ -4,7 +4,7 @@ import logging
 import json
 from conf import kafka_subject, kafka_host, data_broker_host
 from dojot.module import Messenger, Config, Log
-import threading 
+import threading
 import time
 
 LOGGER = Log().color_log()
@@ -24,12 +24,12 @@ class Publisher(threading.Thread):
             LOGGER.debug("Caught: " + str(e))
         finally:
             LOGGER.debug("data published")
-        
+
     @classmethod
     def init(cls):
         if cls.messenger is not None:
             return
-        
+
         LOGGER.debug("Initializing dojot.module")
         config = Config({
             "kafka" : {
@@ -71,5 +71,4 @@ class Publisher(threading.Thread):
         cls.messenger.create_channel(kafka_subject, "w")
 
     def run(self):
-        # time.sleep(5)
         self.init()
