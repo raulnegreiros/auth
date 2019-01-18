@@ -270,7 +270,7 @@ def delete_user(db_session, username: str, requester):
         log().info(f"user {user.username} deleted by {requester['username']}")
         log().info(user.safe_dict())
 
-        kongUtils.remove_from_kong(user)
+        kongUtils.remove_from_kong(user.username)
         MVUserPermission.refresh()
         MVGroupPermission.refresh()
         db_session.commit()
