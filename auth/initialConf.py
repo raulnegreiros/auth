@@ -124,7 +124,7 @@ def create_permissions():
         permission_dict_helper('ro_export', "/export/(.*)", "GET"),
         permission_dict_helper('all_export', "/export/(.*)", "(.*)"),
 	permission_dict_helper('ro_image', "/fw-image/(.*)", "GET"),
- 	permission_dict_helper('all_image', "/fw-image/(.*)", "(.*)")
+	permission_dict_helper('all_image', "/fw-image/(.*)", "(.*)")
     ]
 
     for p in predef_perms:
