@@ -159,7 +159,7 @@ def search_user(db_session, username: str = None) -> [User]:
     :raises: HTTPRequestError if there is no users (or no such user)
     currently in the database.
     """
-     #order the list of user by Name
+    # order the list of user by Name
     user_query = db_session.query(User).order_by(User.name)
 
     if username:
@@ -189,6 +189,7 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
     :return: The old information (a dictionary containing the old information about the user
              and the old service.
     :raises HTTPRequestError: If the username is different from the original (this field cannot be updated).
+    :raises HTTPRequestError: Can't edit service of the admin.
     """
     # Drop invalid fields
     updated_info = {k: updated_info[k] for k in updated_info if k in User.fillable}
@@ -211,6 +212,11 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
 
     log().info(f"user {user.username} updated by {requester['username']}");
     log().info({'oldUser': user.safe_dict(), 'newUser': updated_info})
+
+    # the admin cant update service
+    if 'service' in updated_info.keys() \
+            and 'admin' == user.username and updated_info['service'] != 'admin':
+        raise HTTPRequestError(405, "Can't edit service of admin")
 
     # Update all new data.
     if 'name' in updated_info.keys():
@@ -244,12 +250,16 @@ def delete_user(db_session, username: str, requester):
                       "userid" and "username"
     :return: The removed user
     :raises HTTPRequestError: If the user tries to remove itself.
+    :raises HTTPRequestError: Can't delete the admin user.
     :raises HTTPRequestError: If the user is not in the database.
     """
     try:
         user = User.get_by_name_or_id(username)
         if user.id == requester['userid']:
             raise HTTPRequestError(400, "a user can't remove himself")
+        elif user.username == 'admin':
+            raise HTTPRequestError(405, "Can't delete the admin user")
+
         db_session.execute(
             UserPermission.__table__.delete(UserPermission.user_id == user.id)
         )
@@ -402,21 +412,25 @@ def update_perm(db_session, permission: str, perm_data, requester):
     :param requester: Who is creating this user. This is a dictionary with two keys:
                       "userid" and "username".
     :return:
+    :raises HTTPRequestError: Can't edit a system permission.
     """
     perm_data = {k: perm_data[k] for k in perm_data if k in Permission.fillable}
 
     check_perm(perm_data)
     try:
         perm = Permission.get_by_name_or_id(permission)
-        if 'name' in perm_data.keys() and perm.name != perm_data['name']:
-            raise HTTPRequestError(400, "permission name can't be changed")
-        for key, value in perm_data.items():
-            setattr(perm, key, value)
-        db_session.add(perm)
-        log().info(f"permission {perm.name} updated by {requester['username']}")
-        log().info(perm_data)
+        if perm.type == PermissionTypeEnum.api:
+            if 'name' in perm_data.keys() and perm.name != perm_data['name']:
+                raise HTTPRequestError(400, "permission name can't be changed")
+            for key, value in perm_data.items():
+                setattr(perm, key, value)
+            db_session.add(perm)
+            log().info(f"permission {perm.name} updated by {requester['username']}")
+            log().info(perm_data)
 
-        db_session.commit()
+            db_session.commit()
+        else:
+            raise HTTPRequestError(405, "Can't edit a system permission ")
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "No permission found with this ID")
 
@@ -429,6 +443,7 @@ def delete_perm(db_session, permission: str, requester):
     :param requester: Who is creating this user. This is a dictionary with two keys:
                       "userid" and "username".
     :return:
+    :raises HTTPRequestError: Can't delete a system permission.
     """
     try:
         perm = Permission.get_by_name_or_id(permission)
@@ -498,7 +513,7 @@ def search_group(db_session, name=None):
     :param name: Group name
     :return:
     """
-    #Order by Name
+    # Order by Name
     group_query = db_session.query(Group).order_by(Group.name)
     if name:
         group_query = group_query.filter(Group.name.like('%' + name + '%'))
@@ -524,6 +539,9 @@ def update_group(db_session, group, group_data, requester):
     try:
         group = Group.get_by_name_or_id(group)
 
+        if group.name == 'admin':
+            raise HTTPRequestError(405, "Can't edit admin group")
+
         for key, value in group_data.items():
             setattr(group, key, value)
         db_session.add(group)
@@ -538,6 +556,10 @@ def update_group(db_session, group, group_data, requester):
 def delete_group(db_session, group, requester):
     try:
         group = Group.get_by_name_or_id(group)
+
+        if group.name == 'admin':
+            raise HTTPRequestError(405, "Can't delete admin group")
+
         db_session.execute(
             GroupPermission.__table__.delete(GroupPermission.group_id == group.id)
         )

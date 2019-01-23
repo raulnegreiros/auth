@@ -18,7 +18,8 @@ def auth_clear_permissions_and_groups(transaction):
         users = crud.search_user(db.session, None)
         # Delete all users
         for user in users:
-            crud.delete_user(db.session, user.username, requester)
+            if user.username != 'admin':
+                crud.delete_user(db.session, user.username, requester)
     except HTTPRequestError:
         pass
 
@@ -36,7 +37,8 @@ def auth_clear_permissions_and_groups(transaction):
     try:
         groups = crud.search_group(db.session)
         for group in groups:
-            crud.delete_group(db.session, group.name, requester)
+            if group.name != 'admin':
+                crud.delete_group(db.session, group.name, requester)
     except HTTPRequestError as e:
         pass
 
@@ -54,7 +56,8 @@ def auth_clear_everything_hook(transaction):
         users = crud.search_user(db.session, None)
         # Delete all users
         for user in users:
-            crud.delete_user(db.session, user.username, requester)
+            if user.username != 'admin':
+                crud.delete_user(db.session, user.username, requester)
     except HTTPRequestError:
         pass
 
@@ -72,7 +75,8 @@ def auth_clear_everything_hook(transaction):
     try:
         groups = crud.search_group(db.session)
         for group in groups:
-            crud.delete_group(db.session, group.name, requester)
+            if group.name != 'admin':
+                crud.delete_group(db.session, group.name, requester)
     except HTTPRequestError as e:
         pass
 
