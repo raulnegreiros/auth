@@ -66,11 +66,6 @@ def check_user(user):
     if len(user['name']) > UserLimits.name:
         raise HTTPRequestError(400, "Name too long")
 
-    if not user.get('profile', ""):
-        raise HTTPRequestError(400, "Missing profile")
-    if len(user['profile']) > UserLimits.profile:
-        raise HTTPRequestError(400, "Profile name too long")
-
     return user
 
 
@@ -90,6 +85,11 @@ def create_user(db_session, user: User, requester):
     # Drop invalid fields
     user = {k: user[k] for k in user if k in User.fillable}
     check_user(user)
+
+    if not user.get('profile', ""):
+        raise HTTPRequestError(400, "Missing profile")
+    if len(user['profile']) > UserLimits.profile:
+        raise HTTPRequestError(400, "Profile name too long")
 
     # Sanity checks
     # Check whether username and e-mail are unique.

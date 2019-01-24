@@ -15,7 +15,7 @@ Authenticate with the system, returning a session token to be used with API
     + Body
 
             {
-                "username" : "admin",
+                "username" : "testadm",
                 "passwd" : "admin"
             }
 
@@ -74,9 +74,9 @@ Lists all users known to the platform
                   "email": "admin@noemail.com",
                   "id": "1",
                   "name": "Admin (superuser)",
-                  "profile": "admin",
+                  "profile": "testadm",
                   "service": "admin",
-                  "username": "admin"
+                  "username": "testadm"
                 },
                 {
                   "created_by": "1",
@@ -84,7 +84,7 @@ Lists all users known to the platform
                   "email": "test@noemail.com",
                   "id": "2",
                   "name": "test",
-                  "profile": "user",
+                  "profile": "testuser",
                   "service": "test",
                   "username": "test"
                 }
@@ -114,7 +114,7 @@ Service is the token that associates the user with the set of devices and flows 
               "service": "test",
               "email": "test@noemail.com",
               "name": "test",
-              "profile": "user"
+              "profile": "testuser"
             }
 
 + Response 200 (application/json)
@@ -126,12 +126,12 @@ Service is the token that associates the user with the set of devices and flows 
                 "username": "test",
                 "service": "test",
                 "email": "test@noemail.com",
-                "profile": "user",
+                "profile": "testuser",
                 "created_date": "2018-01-04 13:09:03.568749",
                 "created_by": "0"
               },
               "groups": [
-                "user"
+                "testuser"
               ],
               "could not add": [],
               "message": "user created"
@@ -160,12 +160,12 @@ Retrieves all information from a specific registered user
               "user": {
                 "created_by": "0",
                 "created_date": "2018-01-03 12:49:25.717374",
-                "email": "admin@noemail.com",
+                "email": "testadm@noemail.com",
                 "id": "1",
-                "name": "Admin (superuser)",
-                "profile": "admin",
+                "name": "testadm",
+                "profile": "testadm",
                 "service": "admin",
-                "username": "admin"
+                "username": "testadm"
               }
             }
 
@@ -193,8 +193,7 @@ Replaces user information. Fields or attributes that are not informed will rever
             {
                 "service": "test",
                 "email": "test_new@noemail.com",
-                "name": "test",
-                "profile": "user"
+                "name": "test"
             }
 
 + Response 200 (application/json)
