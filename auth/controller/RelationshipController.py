@@ -27,6 +27,10 @@ def add_user_group(db_session, user, group, requester):
     r = UserGroup(user_id=user.id, group_id=group.id)
     db_session.add(r)
     cache.delete_key(userid=user.id)
+
+    user.reset_token()
+    db_session.add(user)
+
     log().info(f"user {user.username} added to group {group.name} by {requester['username']}")
 
     db_session.commit()
@@ -46,6 +50,10 @@ def remove_user_group(db_session, user, group, requester):
             .filter_by(user_id=user.id, group_id=group.id).one()
         db_session.delete(relation)
         cache.delete_key(userid=user.id)
+
+        user.reset_token()
+        db_session.add(user)
+
         log().info(f"user {user.username} removed from {group.name} by {requester['username']}")
         db_session.commit()
     except orm_exceptions.NoResultFound:
