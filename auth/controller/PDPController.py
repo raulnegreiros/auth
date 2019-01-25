@@ -1,6 +1,6 @@
 import re
 
-from database.Models import PermissionEnum
+from database.Models import PermissionEnum, UserGroup
 from database.Models import MVUserPermission, MVGroupPermission
 from database.flaskAlchemyInit import HTTPRequestError
 from controller.AuthenticationController import get_jwt_payload
@@ -32,11 +32,14 @@ def pdp_main(db_session, pdp_request):
     if cached_veredict:
         log().info('user ' + str(user_id) + ' '
                    + cached_veredict + ' to ' + pdp_request['action']
-                   + ' on ' + pdp_request['resource'])
+                   + ' on ' + pdp_request['resource'] + ' from cache')
         return cached_veredict
 
+
+    user_groups = [g.group_id for g in UserGroup.query.filter_by(user_id=user_id).all()]
+
     veredict = iterate_permissions(user_id,
-                                   jwt_payload['groups'],
+                                   user_groups,
                                    pdp_request['action'],
                                    pdp_request['resource'])
     # Registry this veredict on cache
@@ -47,7 +50,7 @@ def pdp_main(db_session, pdp_request):
 
     log().info('user ' + str(user_id) + ' '
                + veredict + ' to ' + pdp_request['action']
-               + ' on ' + pdp_request['resource'])
+               + ' on ' + pdp_request['resource'] + ' registered on cache')
     return veredict
 
 
@@ -56,6 +59,7 @@ def iterate_permissions(user_id, groups_list, action, resource):
 
     # check user direct permissions
     for p in MVUserPermission.query.filter_by(user_id=user_id):
+        log().info('checking for user permissions')
         granted = make_decision(p, action, resource)
         # user permissions have precedence over group permissions
         if granted != PermissionEnum.notApplicable:
@@ -64,6 +68,7 @@ def iterate_permissions(user_id, groups_list, action, resource):
     # check user group permissions
     for g in groups_list:
         for p in MVGroupPermission.query.filter_by(group_id=g):
+            log().info('checking for group permissions')
             granted = make_decision(p, action, resource)
             # deny have precedence over permits
             if granted == PermissionEnum.deny:

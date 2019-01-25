@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 import enum
 import datetime
+import kongUtils
 
 from .inputConf import UserLimits, PermissionLimits, GroupLimits
 from .flaskAlchemyInit import db
@@ -107,6 +108,14 @@ class User(db.Model):
                 for c in self.__table__.columns
                 if c.name not in self.sensibleFields
             }
+
+    def reset_token(self):
+        kong_data = kongUtils.reset_kong_secret(self.username, self.kongId)
+
+        if kong_data is not None:
+            self.secret = kong_data['secret']
+            self.key = kong_data['key']
+            self.kongId = kong_data['kongid']
 
     @staticmethod
     def get_by_name_or_id(name_or_id: str):

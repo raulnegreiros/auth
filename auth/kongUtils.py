@@ -71,6 +71,41 @@ def revoke_kong_secret(username, token_id):
     except ConnectionError:
         LOGGER.error("Failed to connect to kong")
         raise HTTPRequestError(500, "Failed to connect to kong")
+        
+
+# Invalidate old kong shared secret and generates a new one
+def reset_kong_secret(username, token_id):
+    if conf.kongURL == 'DISABLED':
+        return
+    try:
+        delete_response = requests.delete("%s/consumers/%s/jwt/%s"
+                        % (conf.kongURL, username, token_id))  
+
+        if not (200 <= delete_response.status_code < 300):
+            LOGGER.error("failed to delete key: %d %s"
+                         % (delete_response.status_code, delete_response.reason))
+            LOGGER.error(delete_response.json())
+            return None
+
+        headers = {"content-type": "application/x-www-form-urlencoded"}
+        response = requests.post('%s/consumers/%s/jwt'
+                                 % (conf.kongURL, username), headers=headers)
+        if not (200 <= response.status_code < 300):
+            LOGGER.error("failed to create key: %d %s"
+                         % (response.status_code, response.reason))
+            LOGGER.error(response.json())
+            return None   
+
+        reply = response.json()
+
+        return {
+                'key': reply['key'],
+                'secret': reply['secret'],
+                'kongid': reply['id']
+                }
+    except ConnectionError:
+        LOGGER.error("Failed to connect to kong")
+        raise HTTPRequestError(500, "Failed to connect to kong")
 
 
 def remove_from_kong(user):
