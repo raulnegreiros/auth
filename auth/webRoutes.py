@@ -20,8 +20,12 @@ import auth.kongUtils as kong
 from database.flaskAlchemyInit import app, db, format_response
 from database.flaskAlchemyInit import HTTPRequestError, make_response, load_json_from_request
 import database.Cache as cache
+from controller.KafkaPublisher import Publisher
 
 from utils.serialization import json_serial
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 
 # Authentication endpoint
@@ -39,10 +43,16 @@ def authenticate():
 @app.route('/user', methods=['POST'])
 def create_user():
     try:
+        LOGGER.debug("Creating new user...")
+        LOGGER.debug("Reading request...")
         requester = auth.get_jwt_payload(request.headers.get('Authorization'))
         user = load_json_from_request(request)
-
+        LOGGER.debug("... request is:")
+        LOGGER.debug(user)
+        LOGGER.debug("Inserting user into database...")
         result = crud.create_user(db.session, user, requester)
+        LOGGER.debug("... user data was inserted into the database.")
+        LOGGER.debug("... new user was created.")
         return jsonify(result, 200)
 
     except HTTPRequestError as err:
@@ -404,5 +414,11 @@ def list_tenants():
         return format_response(err.errorCode, err.message)
 
 
+# Initializing Kafka publisher
+LOGGER.debug("Starting publisher initialization thread...")
+Publisher().start()
+LOGGER.debug("... publisher initialization thread started.")
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(host='0.0.0.0', port=5000, threaded=True)
+

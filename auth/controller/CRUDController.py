@@ -16,10 +16,13 @@ import database.historicModels as inactiveTables
 import conf
 import kongUtils
 from database.flaskAlchemyInit import log
-from controller.KafkaPublisher import send_notification
+from controller.KafkaPublisher import Publisher
 import controller.PasswordController as pwdc
 from database.Models import MVUserPermission, MVGroupPermission
 
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 def check_user(user):
     """
@@ -89,15 +92,24 @@ def create_user(db_session, user: User, requester):
     """
     # Drop invalid fields
     user = {k: user[k] for k in user if k in User.fillable}
+    LOGGER.debug("Checking user data...")
     check_user(user)
+    LOGGER.debug("... user data is OK.")
 
     # Sanity checks
     # Check whether username and e-mail are unique.
+    LOGGER.debug("Checking whether user already exist...")
     if db_session.query(User.id).filter_by(username=user['username']).one_or_none():
+        LOGGER.warning("User already exists.")
         raise HTTPRequestError(400, f"Username {user['username']} is in use.")
+    LOGGER.debug("... user doesn't exist.")
 
+    LOGGER.debug("Checking whether user e-mail is already being used...")
     if db_session.query(User.id).filter_by(email=user['email']).one_or_none():
+        LOGGER.warning("User e-mail is already being used.")
         raise HTTPRequestError(400, f"E-mail {user['email']} is in use.")
+
+    LOGGER.debug("... user e-mail is not being used.")
 
     if conf.emailHost == 'NOEMAIL':
         user['salt'], user['hash'] = password.create_pwd(conf.temporaryPassword)
@@ -106,40 +118,57 @@ def create_user(db_session, user: User, requester):
     user['created_by'] = requester['userid']
 
     # User structure is finished.
+    LOGGER.debug("Creating user instance...")
     new_user = User(**user)
-    log().info(f"User {user['username']} created by {requester['username']}")
+    LOGGER.debug("... user instance was created.")
+    LOGGER.debug(f"User data is: {user['username']} created by {requester['username']}")
 
     # If no problems occur to create user (no exceptions), configure kong
+    LOGGER.debug("Configuring Kong...")
     kong_data = kongUtils.configure_kong(new_user.username)
     if kong_data is None:
+        LOGGER.warning("Could not configure Kong.")
         raise HTTPRequestError(500, 'failed to configure verification subsystem')
+    LOGGER.debug("... Kong was successfully configured.")
     new_user.secret = kong_data['secret']
     new_user.key = kong_data['key']
     new_user.kongId = kong_data['kongid']
 
     # Add the new user to the database
+    LOGGER.debug("Adding new user to database session...")
     db_session.add(new_user)
+    LOGGER.debug("... new user was added to database session.")
+    LOGGER.debug("Committing database changes...")
     db_session.commit()
+    LOGGER.debug("... database changes were committed.")
 
     # Configuring groups and user profiles
     group_success = []
     group_failed = []
+    LOGGER.debug("Configuring user profile...")
     if 'profile' in user.keys():
         group_success, group_failed = rship. \
             add_user_many_groups(db_session, new_user.id,
                                  user['profile'], requester)
         db_session.commit()
+    LOGGER.debug("... user profile was configured.")
+
+    LOGGER.debug("Configuring user password...")
     if conf.emailHost != 'NOEMAIL':
         try:
             pwdc.create_password_set_request(db_session, new_user)
             db_session.commit()
         except Exception as e:
             log().warning(e)
+    LOGGER.debug("... user password was configured.")
 
+    LOGGER.debug("Sending tenant creation message to other components...")
     if count_tenant_users(db_session, new_user.service) == 1:
-        log().info(f"Will emit tenant lifecycle event {new_user.service} - CREATE")
-        send_notification({"type": 'CREATE', 'tenant': new_user.service})
+        LOGGER.info(f"Will emit tenant lifecycle event {new_user.service} - CREATE")
+        Publisher.send_notification({"type": 'CREATE', 'tenant': new_user.service})
 
+
+    LOGGER.debug("... tenant creation message was sent.")
     ret = {
         "user": new_user.safe_dict(),
         "groups": group_success,
@@ -226,11 +255,11 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
     # Publish messages related to service creation/deletion
     if count_tenant_users(db_session, old_service) == 0:
         log().info(f"will emit tenant lifecycle event {old_service} - DELETE")
-        send_notification({"type": 'DELETE', 'tenant': old_service})
+        Publisher.send_notification({"type": 'DELETE', 'tenant': old_service})
 
     if count_tenant_users(db_session, user.service) == 1:
         log().info(f"will emit tenant lifecycle event {user.service} - CREATE")
-        send_notification({"type": 'CREATE', 'tenant': user.service})
+        Publisher.send_notification({"type": 'CREATE', 'tenant': user.service})
 
     return old_user, old_service
 
@@ -277,7 +306,7 @@ def delete_user(db_session, username: str, requester):
 
         if count_tenant_users(db_session, user.service) == 0:
             log().info(f"will emit tenant lifecycle event {user.service} - DELETE")
-            send_notification({"type": 'DELETE', 'tenant': user.service})
+            Publisher.send_notification({"type": 'DELETE', 'tenant': user.service})
 
         return user
     except orm_exceptions.NoResultFound:
