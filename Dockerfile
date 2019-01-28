@@ -11,13 +11,13 @@ RUN python3 -m venv /usr/src/venv
 ENV VIRTUAL_ENV="/usr/src/venv"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-ADD . /usr/src/app
+COPY ./requirements/requirements.txt ./requirements
 RUN pip install -r requirements/requirements.txt
 
 FROM python:3.6-alpine
 
 COPY --from=basis /usr/src/venv /usr/src/venv
-COPY --from=basis /usr/src/app /usr/src/app
+COPY . /usr/src/app
 
 RUN apk update && apk --no-cache add libpq libstdc++
 
