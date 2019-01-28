@@ -64,11 +64,16 @@ class Publisher(threading.Thread):
 
         LOGGER.debug("Config is:  " + json.dumps(config.auth))
         cls.messenger = Messenger("dojot.auth", config)
+        LOGGER.debug("Creating faux-tenant dojot-management...")
+        LOGGER.debug(f"Current tenants are: {cls.messenger.tenants}.")
+        cls.messenger.process_new_tenant("dojot-management", json.dumps({"tenant" : "dojot-management"}))
+        LOGGER.debug("... tenant created.")
+        LOGGER.debug("Creating channel " + kafka_subject)
+        cls.messenger.create_channel(kafka_subject, "w")
+        LOGGER.debug("... channel created.")
         LOGGER.debug("Initializing messenger")
         cls.messenger.init()
         LOGGER.debug("... messenger initialized.")
-        LOGGER.debug("Creating channel " + kafka_subject)
-        cls.messenger.create_channel(kafka_subject, "w")
 
     def run(self):
         self.init()
