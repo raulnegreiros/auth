@@ -188,7 +188,7 @@ also be escaped
 ### Search Groups [GET /pap/group?name={name}]
 
 + Parameters
-    + name: admin (optional, string) - a group name, or part of a group name.
+    + name: testadm (optional, string) - a group name, or part of a group name.
 
 + Response 200 (application/json)
             
@@ -196,7 +196,7 @@ also be escaped
                 "groups": [
                     {
                         "id" : 3,
-                        "name" : "admin",
+                        "name" : "testadm",
                         "description" : "Full privilege group"
                     }
                 ]
@@ -243,7 +243,7 @@ also be escaped
     + Body
     
             {
-                "name": "admin",
+                "name": "testadm",
                 "description" : "projectX"
             }
 

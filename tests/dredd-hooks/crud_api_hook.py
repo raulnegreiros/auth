@@ -56,7 +56,7 @@ def create_sample_groups(transaction):
         "username": "dredd"
     }
     group = {
-        "name": "admin",
+        "name": "testadm",
         "description": "admin"
     }
 
@@ -69,7 +69,7 @@ def create_sample_groups(transaction):
         print(f"Error: {e.message}")
 
     group = {
-        "name": "common",
+        "name": "commontest",
         "description": "Group for common users"
     }
 
@@ -81,7 +81,7 @@ def create_sample_groups(transaction):
         print(f"Error: {e.message}")
 
     group = {
-        "name": "user",
+        "name": "testnew",
         "description": "Group for common users"
     }
 
