@@ -35,7 +35,7 @@ class Publisher(threading.Thread):
             "kafka" : {
                 "producer": {
                     "client.id": "dojot.auth",
-                    "metadata.broker.list": kafka_host,
+                    "bootstrap_servers": [kafka_host],
                     "compression.codec": "gzip",
                     "retry.backoff.ms": 200,
                     "message.send.max.retries": 10,
@@ -46,8 +46,8 @@ class Publisher(threading.Thread):
                     "dr_cb": True
                 },
                 "consumer": {
-                    "group.id": "dojot.auth",
-                    "metadata.broker.list": kafka_host
+                    "group_id": "dojot.auth",
+                    "bootstrap_servers": [kafka_host]
                 }
             },
             "data_broker" : {
