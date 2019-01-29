@@ -2,7 +2,7 @@ import base64
 import requests
 import logging
 import json
-from conf import kafka_subject, kafka_host, data_broker_host
+from conf import kafka_subject, kafka_host, data_broker_host, dojot_management_tenant
 from dojot.module import Messenger, Config, Log
 import threading
 import time
@@ -64,9 +64,9 @@ class Publisher(threading.Thread):
 
         LOGGER.debug("Config is:  " + json.dumps(config.auth))
         cls.messenger = Messenger("dojot.auth", config)
-        LOGGER.debug("Creating faux-tenant dojot-management...")
+        LOGGER.debug(f"Creating faux-tenant {dojot_management_tenant}...")
         LOGGER.debug(f"Current tenants are: {cls.messenger.tenants}.")
-        cls.messenger.process_new_tenant("dojot-management", json.dumps({"tenant" : "dojot-management"}))
+        cls.messenger.process_new_tenant(dojot_management_tenant, json.dumps({"tenant" : dojot_management_tenant}))
         LOGGER.debug("... tenant created.")
         LOGGER.debug("Creating channel " + kafka_subject)
         cls.messenger.create_channel(kafka_subject, "w")

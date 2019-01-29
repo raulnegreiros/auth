@@ -88,6 +88,10 @@ kafka_host = os.environ.get("KAFKA_HOST",
 # Global subject to use when publishing tenancy lifecycle events
 kafka_subject = 'dojot.tenancy'
 
+
+dojot_management_tenant = os.environ.get('DOJOT_MANAGEMENT_TENANT', "dojot-management")
+dojot_management_user = os.environ.get('DOJOT_MANAGEMENT_USER', "auth")
+
 # Kafka topic (subject) manager
 data_broker_host =  os.environ.get("DATA_BROKER_URL", 'http://data-broker')
 
