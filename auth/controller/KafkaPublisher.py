@@ -32,29 +32,6 @@ class Publisher(threading.Thread):
 
         LOGGER.debug("Initializing dojot.module")
         config = Config({
-            "kafka" : {
-                "producer": {
-                    "client.id": "dojot.auth",
-                    "bootstrap_servers": [kafka_host],
-                    "compression.codec": "gzip",
-                    "retry.backoff.ms": 200,
-                    "message.send.max.retries": 10,
-                    "socket.keepalive.enable": True,
-                    "queue.buffering.max.messages": 100000,
-                    "queue.buffering.max.ms": 1000,
-                    "batch.num.messages": 1000000,
-                    "dr_cb": True
-                },
-                "consumer": {
-                    "group_id": "dojot.auth",
-                    "bootstrap_servers": [kafka_host]
-                }
-            },
-            "data_broker" : {
-                "url": data_broker_host,
-                "connection_retries": 3,
-                "timeout_sleep": 5
-            },
             "auth" : {
                 "url": "http://localhost:5000",
                 "connection_retries": 3,
@@ -64,7 +41,7 @@ class Publisher(threading.Thread):
 
         LOGGER.debug("Config is:  " + json.dumps(config.auth))
         cls.messenger = Messenger("dojot.auth", config)
-        LOGGER.debug(f"Creating faux-tenant {dojot_management_tenant}...")
+        LOGGER.debug(f"Creating tenant {dojot_management_tenant}...")
         LOGGER.debug(f"Current tenants are: {cls.messenger.tenants}.")
         cls.messenger.process_new_tenant(dojot_management_tenant, json.dumps({"tenant" : dojot_management_tenant}))
         LOGGER.debug("... tenant created.")
