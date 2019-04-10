@@ -124,7 +124,7 @@ def list_permissions():
     try:
         perms = crud.search_perm(
             db.session,
-            # search filters attrs
+            # search filters
             request.args.get('path'),
             request.args.get('method'),
             request.args.get('permission'),
