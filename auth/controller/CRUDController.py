@@ -238,7 +238,7 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
         if db_session.query(User).filter_by(email=updated_info['email']).one_or_none():
             raise HTTPRequestError(400, "email already in use")
 
-    LOGGER.info(f"user {user.username} updated by {requester['username']}");
+    LOGGER.info(f"user {user.username} updated by {requester['username']}")
     LOGGER.info({'oldUser': user.safe_dict(), 'newUser': updated_info})
 
     # the admin cant update service
