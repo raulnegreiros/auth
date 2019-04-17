@@ -1,8 +1,11 @@
 import auth.conf as conf
 from alarmlibrary.connection import RabbitMqClientConnection
 from alarmlibrary.alarm import Alarm, AlarmSeverity
-from database.flaskAlchemyInit import log
 from database.flaskAlchemyInit import HTTPRequestError
+
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 class RabbitManager(object):
     def __init__(self, target=conf.rabbitmq_host):
@@ -52,6 +55,6 @@ class AlarmError(HTTPRequestError):
                 try:
                     rabbit_client.send(alarm)
                 except Exception as ex:
-                    log().error("There was a problem with RabbitMQ connection. Error is: {}".format(ex))
-                    log().error("No alarm was sent.")
+                    LOGGER.error("There was a problem with RabbitMQ connection. Error is: {}".format(ex))
+                    LOGGER.error("No alarm was sent.")
 

@@ -4,7 +4,10 @@ import controller.RelationshipController as rship
 import crud_api_hook as crud
 import auth_hook as auth
 from database.flaskAlchemyInit import db, HTTPRequestError
-from database.flaskAlchemyInit import log
+
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 USER_GROUP = []
 USER_PERMS = []
