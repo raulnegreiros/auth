@@ -116,10 +116,8 @@ def create_permissions():
         permission_dict_helper('ro_ca', "/ca/(.*)", "GET"),
         permission_dict_helper('wo_sign', "/sign/(.*)", "POST"),
         permission_dict_helper('ro_socketio', "/stream/socketio/", "GET"),
-        permission_dict_helper('ro_import', "/import/(.*)", "GET"),
         permission_dict_helper('all_import', "/import/(.*)", "(.*)"),
         permission_dict_helper('ro_export', "/export/(.*)", "GET"),
-        permission_dict_helper('all_export', "/export/(.*)", "(.*)"),
         permission_dict_helper('ro_image', "/fw-image/(.*)", "GET"),
         permission_dict_helper('all_image', "/fw-image/(.*)", "(.*)")
     ]
@@ -166,7 +164,7 @@ def add_permissions_group():
                 'wo_sign',
                 "ro_socketio",
                 "all_import",
-                "all_export",
+                "ro_export",
                 "all_image"
             ]
         }
