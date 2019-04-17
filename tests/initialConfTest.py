@@ -128,7 +128,7 @@ def add_permissions_group():
                 'wo_sign',
                 "ro_socketio",
                 "all_import",
-                "all_export",
+                "ro_export",
                 "all_image"
             ]
         }
