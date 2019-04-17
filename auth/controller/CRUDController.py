@@ -15,7 +15,6 @@ import database.Cache as cache
 import database.historicModels as inactiveTables
 import conf
 import kongUtils
-from database.flaskAlchemyInit import log
 from controller.KafkaPublisher import Publisher
 import controller.PasswordController as pwdc
 from database.Models import MVUserPermission, MVGroupPermission
@@ -159,7 +158,7 @@ def create_user(db_session, user: User, requester):
             pwdc.create_password_set_request(db_session, new_user)
             db_session.commit()
         except Exception as e:
-            log().warning(e)
+            LOGGER.warning(e)
     LOGGER.debug("... user password was configured.")
 
     LOGGER.debug("Sending tenant creation message to other components...")
@@ -239,8 +238,8 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
         if db_session.query(User).filter_by(email=updated_info['email']).one_or_none():
             raise HTTPRequestError(400, "email already in use")
 
-    log().info(f"user {user.username} updated by {requester['username']}");
-    log().info({'oldUser': user.safe_dict(), 'newUser': updated_info})
+    LOGGER.info(f"user {user.username} updated by {requester['username']}")
+    LOGGER.info({'oldUser': user.safe_dict(), 'newUser': updated_info})
 
     # the admin cant update service
     if 'service' in updated_info.keys() \
@@ -260,11 +259,11 @@ def update_user(db_session, user: str, updated_info, requester) -> (dict, str):
 
     # Publish messages related to service creation/deletion
     if count_tenant_users(db_session, old_service) == 0:
-        log().info(f"will emit tenant lifecycle event {old_service} - DELETE")
+        LOGGER.info(f"will emit tenant lifecycle event {old_service} - DELETE")
         Publisher.send_notification({"type": 'DELETE', 'tenant': old_service})
 
     if count_tenant_users(db_session, user.service) == 1:
-        log().info(f"will emit tenant lifecycle event {user.service} - CREATE")
+        LOGGER.info(f"will emit tenant lifecycle event {user.service} - CREATE")
         Publisher.send_notification({"type": 'CREATE', 'tenant': user.service})
 
     return old_user, old_service
@@ -306,8 +305,8 @@ def delete_user(db_session, username: str, requester):
                                                            requester['userid'])
         password.expire_password_reset_requests(db_session, user.id)
         db_session.delete(user)
-        log().info(f"user {user.username} deleted by {requester['username']}")
-        log().info(user.safe_dict())
+        LOGGER.info(f"user {user.username} deleted by {requester['username']}")
+        LOGGER.info(user.safe_dict())
 
         kongUtils.remove_from_kong(user.username)
         MVUserPermission.refresh()
@@ -315,7 +314,7 @@ def delete_user(db_session, username: str, requester):
         db_session.commit()
 
         if count_tenant_users(db_session, user.service) == 0:
-            log().info(f"will emit tenant lifecycle event {user.service} - DELETE")
+            LOGGER.info(f"will emit tenant lifecycle event {user.service} - DELETE")
             Publisher.send_notification({"type": 'DELETE', 'tenant': user.service})
 
         return user
@@ -382,8 +381,8 @@ def create_perm(db_session, permission, requester):
     check_perm(permission)
     permission['created_by'] = requester['userid']
     perm = Permission(**permission)
-    log().info(f"permission {perm.name} create by {requester['username']}")
-    log().info(perm.safe_dict())
+    LOGGER.info(f"permission {perm.name} create by {requester['username']}")
+    LOGGER.info(perm.safe_dict())
 
     db_session.add(perm)
     db_session.commit()
@@ -454,8 +453,8 @@ def update_perm(db_session, permission: str, perm_data, requester):
             for key, value in perm_data.items():
                 setattr(perm, key, value)
             db_session.add(perm)
-            log().info(f"permission {perm.name} updated by {requester['username']}")
-            log().info(perm_data)
+            LOGGER.info(f"permission {perm.name} updated by {requester['username']}")
+            LOGGER.info(perm_data)
 
             db_session.commit()
         else:
@@ -484,8 +483,8 @@ def delete_perm(db_session, permission: str, requester):
                 GroupPermission.__table__.delete(GroupPermission.permission_id == perm.id)
             )
             cache.delete_key(action=perm.method, resource=perm.path)
-            log().info(f"permission {perm.name} deleted by {requester['username']}")
-            log().info(perm.safe_dict())
+            LOGGER.info(f"permission {perm.name} deleted by {requester['username']}")
+            LOGGER.info(perm.safe_dict())
             db_session.delete(perm)
             db_session.commit()
             MVUserPermission.refresh()
@@ -528,8 +527,8 @@ def create_group(db_session, group_data, requester):
 
     group_data['created_by'] = requester['userid']
     group = Group(**group_data)
-    log().info(f"group {group.name} created by {requester['username']}")
-    log().info(group.safe_dict())
+    LOGGER.info(f"group {group.name} created by {requester['username']}")
+    LOGGER.info(group.safe_dict())
     db_session.add(group)
     db_session.commit()
     return group
@@ -574,7 +573,7 @@ def update_group(db_session, group, group_data, requester):
         for key, value in group_data.items():
             setattr(group, key, value)
         db_session.add(group)
-        log().info('group ' + group.name + ' updated by '
+        LOGGER.info('group ' + group.name + ' updated by '
                    + requester['username'],
                    group_data)
         db_session.commit()
@@ -596,7 +595,7 @@ def delete_group(db_session, group, requester):
             UserGroup.__table__.delete(UserGroup.group_id == group.id)
         )
         cache.delete_key()
-        log().info('group ' + group.name + ' deleted by '
+        LOGGER.info('group ' + group.name + ' deleted by '
                    + requester['username'],
                    group.safe_dict())
         db_session.delete(group)
