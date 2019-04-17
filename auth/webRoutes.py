@@ -65,7 +65,7 @@ def list_users():
         users = crud.search_user(
             db.session,
             # Optional search filters
-            request.args['username'] if 'username' in request.args else None
+            request.args.get('username')
         )
         users_safe = list(map(lambda u: u.safe_dict(), users))
         return make_response(json.dumps({"users": users_safe}, default=json_serial), 200)
@@ -125,10 +125,10 @@ def list_permissions():
         perms = crud.search_perm(
             db.session,
             # search filters
-            request.args['path'] if 'path' in request.args else None,
-            request.args['method'] if 'method' in request.args else None,
-            request.args['permission'] if 'permission' in request.args else None,
-            request.args['type'] if 'type' in request.args else None
+            request.args.get('path'),
+            request.args.get('method'),
+            request.args.get('permission'),
+            request.args.get('type')
         )
         permissions_safe = list(map(lambda p: p.safe_dict(), perms))
         return make_response(json.dumps({"permissions": permissions_safe}, default=json_serial), 200)
@@ -188,7 +188,7 @@ def list_group():
         groups = crud.search_group(
             db.session,
             # search filters
-            request.args['name'] if 'name' in request.args else None
+            request.args.get('name')
         )
         groups_safe = list(map(lambda p: p.safe_dict(), groups))
         for g in groups_safe:
@@ -421,4 +421,3 @@ LOGGER.debug("... publisher initialization thread started.")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True)
-
