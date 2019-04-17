@@ -13,8 +13,11 @@ import conf
 
 from database.flaskAlchemyInit import HTTPRequestError
 from database.Models import User
-from database.flaskAlchemyInit import log
 from auth.alarms import AlarmError
+
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 def authenticate(db_session, auth_data):
     if 'username' not in auth_data.keys():
@@ -52,7 +55,7 @@ def authenticate(db_session, auth_data):
             'username': user.username
         }
         encoded = jwt.encode(claims, user.secret, algorithm='HS256')
-        log().info('user ' + user.username + ' loged in')
+        LOGGER.info('user ' + user.username + ' loged in')
         return str(encoded, 'ascii')
 
     raise AlarmError(403, 'AuthorizationError', username, user.id)
