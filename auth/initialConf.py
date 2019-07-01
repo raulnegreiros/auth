@@ -120,7 +120,7 @@ def create_permissions():
         permission_dict_helper('ro_export', "/export/(.*)", "GET"),
         permission_dict_helper('ro_image', "/fw-image/(.*)", "GET"),
         permission_dict_helper('all_image', "/fw-image/(.*)", "(.*)"),
-        permission_dict_helper('ro_mqqt_metrics', "/iotagent-mqtt/metrics", "GET")
+        permission_dict_helper('ro_mqtt_metrics', "/iotagent-mqtt/metrics", "GET")
     ]
 
     for p in predef_perms:
@@ -166,7 +166,7 @@ def add_permissions_group():
                 "ro_socketio",
                 "all_import",
                 "ro_export",
-                "ro_mqqt_metrics",
+                "ro_mqtt_metrics",
                 "all_image"
             ]
         }
