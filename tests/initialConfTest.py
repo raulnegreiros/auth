@@ -129,6 +129,7 @@ def add_permissions_group():
                 "ro_socketio",
                 "wo_import",
                 "ro_export",
+                "ro_mqtt_metrics",
                 "all_image"
             ]
         }
