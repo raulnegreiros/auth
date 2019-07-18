@@ -6,8 +6,6 @@ python:
 cache:
   directories:
   - node_modules
-before_install:
-  - npm install aglio
 script:
   - 'docker build -t ${TRAVIS_REPO_SLUG} .'
   - 'docker build -t dredd-tests . -f ./tests/Dockerfile'
