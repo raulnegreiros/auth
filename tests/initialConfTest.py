@@ -127,8 +127,9 @@ def add_permissions_group():
                 'ro_ca',
                 'wo_sign',
                 "ro_socketio",
-                "all_import",
+                "wo_import",
                 "ro_export",
+                "ro_mqtt_metrics",
                 "all_image"
             ]
         }
