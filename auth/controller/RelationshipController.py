@@ -4,9 +4,11 @@ from database.Models import Permission, User, Group
 from database.Models import UserPermission, GroupPermission, UserGroup
 from database.flaskAlchemyInit import HTTPRequestError
 import database.Cache as cache
-from database.flaskAlchemyInit import log
 from database.Models import MVUserPermission, MVGroupPermission
 
+from dojot.module import Log
+
+LOGGER = Log().color_log()
 
 def add_user_group(db_session, user, group, requester):
     try:
@@ -31,7 +33,7 @@ def add_user_group(db_session, user, group, requester):
     user.reset_token()
     db_session.add(user)
 
-    log().info(f"user {user.username} added to group {group.name} by {requester['username']}")
+    LOGGER.info(f"user {user.username} added to group {group.name} by {requester['username']}")
 
     db_session.commit()
 
@@ -54,7 +56,7 @@ def remove_user_group(db_session, user, group, requester):
         user.reset_token()
         db_session.add(user)
 
-        log().info(f"user {user.username} removed from {group.name} by {requester['username']}")
+        LOGGER.info(f"user {user.username} removed from {group.name} by {requester['username']}")
         db_session.commit()
     except orm_exceptions.NoResultFound:
         raise HTTPRequestError(404, "User is not a member of the group")
@@ -96,7 +98,7 @@ def add_group_permission(db_session, group, permission, requester):
     db_session.add(r)
     cache.delete_key(action=perm.method,
                      resource=perm.path)
-    log().info(f"permission {perm.name} added to group {group.name} by {requester['username']}")
+    LOGGER.info(f"permission {perm.name} added to group {group.name} by {requester['username']}")
     MVGroupPermission.refresh()
     db_session.commit()
 
@@ -116,7 +118,7 @@ def remove_group_permission(db_session, group, permission, requester):
         db_session.delete(relation)
         cache.delete_key(action=perm.method,
                          resource=perm.path)
-        log().info(f"permission {perm.name} removed from group {group.name} by {requester['username']}")
+        LOGGER.info(f"permission {perm.name} removed from group {group.name} by {requester['username']}")
         MVGroupPermission.refresh()
         db_session.commit()
     except orm_exceptions.NoResultFound:
@@ -144,7 +146,7 @@ def add_user_permission(db_session, user, permission, requester):
                      resource=perm.path)
     MVUserPermission.refresh()
     db_session.commit()
-    log().info(f"user {user.username} received permission {perm.name} by {requester['username']}")
+    LOGGER.info(f"user {user.username} received permission {perm.name} by {requester['username']}")
 
 
 def remove_user_permission(db_session, user, permission, requester):
@@ -163,7 +165,7 @@ def remove_user_permission(db_session, user, permission, requester):
         cache.delete_key(userid=user.id,
                          action=perm.method,
                          resource=perm.path)
-        log().info(f"permission {perm.name} for user {user.username} was revoked by {requester['username']}")
+        LOGGER.info(f"permission {perm.name} for user {user.username} was revoked by {requester['username']}")
         MVUserPermission.refresh()
         db_session.commit()
     except orm_exceptions.NoResultFound:

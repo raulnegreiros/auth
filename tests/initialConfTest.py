@@ -123,13 +123,12 @@ def add_permissions_group():
                 'all_template',
                 'all_device',
                 'all_flows',
-                'all_history',
-                'all_metric',
+                'ro_history',
                 'ro_ca',
                 'wo_sign',
                 "ro_socketio",
                 "all_import",
-                "all_export",
+                "ro_export",
                 "all_image"
             ]
         }
