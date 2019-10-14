@@ -11,4 +11,4 @@ json-logging-py==0.2
 flask-redis==0.3.0
 marisa_trie==0.7.4
 git+https://github.com/dojot/alarm-client-python.git#egg=dojot-alarmlibrary
-dojot.module==0.0.1a4
+dojot.module==0.0.1a5
